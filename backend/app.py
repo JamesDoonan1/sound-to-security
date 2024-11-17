@@ -8,7 +8,7 @@ def generate_vocal_password():
     vocal_input = request.json.get('vocal_input', '')
     generated_password = f"secure-{vocal_input}"  # Example placeholder logic
 
-    return jsonify({"password": generated_password})
+    return jsonify({"generated password": generated_password})
 
 if __name__ == '__main__':
     app.run(debug=True)
