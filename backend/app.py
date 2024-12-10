@@ -1,14 +1,33 @@
-from flask import Flask, request, jsonify
-app = Flask(__name__)
+import sys
+import os
+from flask import Flask, jsonify
+from backend.routes.passwords_routes import passwords_routes
 
-@app.route('/generate-vocal-password', methods=['POST'])
-def generate_vocal_password():
-    # Simulate password generation from vocal input
-    # In the future, you will replace this with real audio processing logic
-    vocal_input = request.json.get('vocal_input', '')
-    generated_password = f"secure-{vocal_input}"  # Example placeholder logic
+# Add the root directory to the Python module search path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    return jsonify({"password": generated_password})
+def create_app():
+    """Create and configure the Flask app."""
+    app = Flask(__name__)
 
-if __name__ == '__main__':
+    # Default route
+    @app.route("/", methods=["GET"])
+    def home():
+        return jsonify({"message": "Welcome to the Password Generator API!"})
+
+
+    # Register blueprints (routes)
+    app.register_blueprint(passwords_routes)
+
+    return app
+
+
+if __name__ == "__main__":
+    # Print Python's module search path for debugging
+    print("PYTHONPATH:", sys.path)
+    
+    # Create the Flask application
+    app = create_app()
+
+    # Run the application in debug mode
     app.run(debug=True)

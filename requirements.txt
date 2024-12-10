@@ -1,0 +1,5 @@
+sounddevice
+librosa
+anthropic
+numpy
+tkinter
