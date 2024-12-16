@@ -60,4 +60,38 @@ def create_hash(features):
     return audio_hash
 
 
+audio_folder_path = "/media/sf_VM_Shared_Folder/Audio Files"
 
+if not os.path.exists(audio_folder_path):
+    print(f"The folder {audio_folder_path} does not exist.")
+    exit()
+
+
+for file_name in os.listdir(audio_folder_path):
+    
+    if file_name.endswith(".mp3"):
+        file_path = os.path.join(audio_folder_path, file_name)
+        print(f"\nProcessing file: {file_name}")
+
+        try:
+            print(f"Loading with librosa: {file_path}")
+            y, sr = librosa.load(file_path, sr=None)  # Load audio file without resampling
+            print(f"Librosa Loaded: {len(y)} samples, Sample Rate: {sr}")
+
+            
+            features = extract_features(y, sr)
+            print("Extracted Features:")
+            for key, value in features.items():
+                print(f"{key}: {value.shape if isinstance(value, np.ndarray) else len(value)}")
+
+
+            audio_hash = create_hash(features)
+            print(f"Generated Hash for {file_name}: {audio_hash}")
+            print("Hash Explanation: The hash is created by concatenating all extracted features, converting them into bytes, and then computing an MD5 hash. This ensures a unique identifier for the audio file based on its content.")
+
+        except Exception as e:
+            print(f"Failed to process the file with Librosa: {e}")
+
+        print("-" * 50)
+
+print("Processing completed.")
