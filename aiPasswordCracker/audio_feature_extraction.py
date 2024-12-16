@@ -42,3 +42,7 @@ def extract_features(y, sr):
         "Chroma Features (CENS)": chroma_cens.flatten(),
     }
 
+
+def create_hash(features):
+    
+    
