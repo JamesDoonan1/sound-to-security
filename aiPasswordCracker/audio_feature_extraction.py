@@ -45,4 +45,19 @@ def extract_features(y, sr):
 
 def create_hash(features):
     
+    #Creates a unique hash based on the extracted features.
     
+    # Flatten and concatenate all feature arrays into one long 1D array
+    concatenated_features = np.concatenate([value for value in features.values()])
+    
+    # Convert the concatenated array into bytes
+    feature_bytes = concatenated_features.tobytes()
+    
+    # Use MD5 hashing to generate a hash based on the feature bytes
+    hash_object = hashlib.md5(feature_bytes)
+    audio_hash = hash_object.hexdigest()  # Get the hexadecimal representation of the hash
+    
+    return audio_hash
+
+
+
