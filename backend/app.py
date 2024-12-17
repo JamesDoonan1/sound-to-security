@@ -1,8 +1,9 @@
 import sys
 import os
 from flask import Flask, jsonify
-from backend.routes.passwords_routes import passwords_routes
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from backend.routes.passwords_routes import passwords_routes
 # Add the root directory to the Python module search path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
