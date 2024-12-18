@@ -2,96 +2,173 @@ import librosa
 import numpy as np
 import os
 import hashlib
+from typing import Dict, Any, Tuple
+from dotenv import load_dotenv
 
+# Import the new OpenAI client class
+from openai import OpenAI
 
-def extract_features(y, sr):
-    
-    # Extracts features from an audio signal using Librosa.
-    
-    # 1. MFCCs (Mel-Frequency Cepstral Coefficients) - A common audio feature that summarizes frequency content.
-    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+# Load environment variables from .env file
+load_dotenv()
 
-    # 2. Spectral Centroid - Indicates where the "center of mass" of the spectrum is located.
-    spectral_centroid = librosa.feature.spectral_centroid(y=y, sr=sr)
+# Get the API key from environment variable
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
 
-    # 3. Spectral Contrast - Highlights the amplitude contrast in different frequency bands.
-    spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+# Instantiate the OpenAI client
+client = OpenAI(api_key=api_key)
 
-    # 4. Tempo and Beats - Extracts the tempo (in beats per minute) and the beat locations in the signal.
-    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+class AudioFeatureProcessor:
+    def extract_features(self, y: np.ndarray, sr: int) -> Dict[str, np.ndarray]:
+        """Extracts features from an audio signal using Librosa."""
+        return {
+            "MFCCs": librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13).flatten(),
+            "Spectral Centroid": librosa.feature.spectral_centroid(y=y, sr=sr).flatten(),
+            "Spectral Contrast": librosa.feature.spectral_contrast(y=y, sr=sr).flatten(),
+            "Tempo": np.array([librosa.beat.beat_track(y=y, sr=sr)[0]]).flatten(),
+            "Beats": librosa.beat.beat_track(y=y, sr=sr)[1].flatten(),
+            "Harmonic Components": librosa.effects.hpss(y)[0].flatten(),
+            "Percussive Components": librosa.effects.hpss(y)[1].flatten(),
+            "Zero-Crossing Rate": librosa.feature.zero_crossing_rate(y).flatten(),
+            "Chroma Features (CENS)": librosa.feature.chroma_cens(y=y, sr=sr).flatten(),
+        }
 
-    # 5. Harmonic and Percussive Components - Splits the audio into harmonic (melodic) and percussive (rhythmic) components.
-    harmonic, percussive = librosa.effects.hpss(y)
+    def create_hash(self, features: Dict[str, np.ndarray]) -> str:
+        """Creates a unique hash based on the extracted features."""
+        concatenated_features = np.concatenate([value for value in features.values()])
+        feature_bytes = concatenated_features.tobytes()
+        return hashlib.md5(feature_bytes).hexdigest()
 
-    # 6. Zero-Crossing Rate - Measures how often the signal crosses zero, commonly used for percussive sounds or noise.
-    zero_crossing_rate = librosa.feature.zero_crossing_rate(y)
+class AudioPasswordGenerator:
+    def _format_features_for_prompt(self, features: Dict[str, np.ndarray], audio_hash: str) -> str:
+        """Format audio features into a readable string for the AI prompt."""
+        feature_summary = [f"Audio Hash: {audio_hash}"]
 
-    # 7. Chroma Features (CENS) - Represents the pitch class (e.g., C, D, E, etc.) content over time.
-    chroma_cens = librosa.feature.chroma_cens(y=y, sr=sr)
+        for feature_name, feature_array in features.items():
+            if len(feature_array) > 0:
+                stats = {
+                    'mean': np.mean(feature_array),
+                    'max': np.max(feature_array),
+                    'min': np.min(feature_array),
+                    'std': np.std(feature_array)
+                }
+                feature_summary.append(f"\n{feature_name}:")
+                for stat_name, value in stats.items():
+                    feature_summary.append(f"- {stat_name}: {value:.4f}")
 
-    # Return all extracted features as a dictionary. The values are flattened to 1D arrays to simplify processing.
-    return {
-        "MFCCs": mfccs.flatten(),
-        "Spectral Centroid": spectral_centroid.flatten(),
-        "Spectral Contrast": spectral_contrast.flatten(),
-        "Tempo": np.array([tempo]).flatten(),  # Flatten Tempo into a 1D array
-        "Beats": beats.flatten(),  # Flatten Beats array
-        "Harmonic Components": harmonic.flatten(),
-        "Percussive Components": percussive.flatten(),
-        "Zero-Crossing Rate": zero_crossing_rate.flatten(),
-        "Chroma Features (CENS)": chroma_cens.flatten(),
-    }
+        return "\n".join(feature_summary)
 
-
-def create_hash(features):
-    
-    #Creates a unique hash based on the extracted features.
-    
-    # Flatten and concatenate all feature arrays into one long 1D array
-    concatenated_features = np.concatenate([value for value in features.values()])
-    
-    # Convert the concatenated array into bytes
-    feature_bytes = concatenated_features.tobytes()
-    
-    # Use MD5 hashing to generate a hash based on the feature bytes
-    hash_object = hashlib.md5(feature_bytes)
-    audio_hash = hash_object.hexdigest()  # Get the hexadecimal representation of the hash
-    
-    return audio_hash
-
-
-audio_folder_path = "/media/sf_VM_Shared_Folder/Audio Files"
-
-if not os.path.exists(audio_folder_path):
-    print(f"The folder {audio_folder_path} does not exist.")
-    exit()
-
-
-for file_name in os.listdir(audio_folder_path):
-    
-    if file_name.endswith(".mp3"):
-        file_path = os.path.join(audio_folder_path, file_name)
-        print(f"\nProcessing file: {file_name}")
-
+    def generate_password(self, features: Dict[str, np.ndarray], audio_hash: str) -> str:
+        """Generate a secure password based on audio features using OpenAI."""
         try:
-            print(f"Loading with librosa: {file_path}")
-            y, sr = librosa.load(file_path, sr=None)  # Load audio file without resampling
-            print(f"Librosa Loaded: {len(y)} samples, Sample Rate: {sr}")
+            formatted_features = self._format_features_for_prompt(features, audio_hash)
 
+            prompt = f"""
+            Generate a secure password using these audio characteristics:
             
-            features = extract_features(y, sr)
-            print("Extracted Features:")
-            for key, value in features.items():
-                print(f"{key}: {value.shape if isinstance(value, np.ndarray) else len(value)}")
+            {formatted_features}
+            
+            Requirements:
+            - Length between 16 and 32 characters
+            - Include uppercase and lowercase letters
+            - Include numbers
+            - Include special characters
+            - No obvious patterns
+            - Must be cryptographically strong
+            
+            Return only the password with no additional text.
+            """
 
+            # Use the new client to create chat completions
+            completion = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a password generation assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
 
-            audio_hash = create_hash(features)
-            print(f"Generated Hash for {file_name}: {audio_hash}")
-            print("Hash Explanation: The hash is created by concatenating all extracted features, converting them into bytes, and then computing an MD5 hash. This ensures a unique identifier for the audio file based on its content.")
+            # Access the generated password
+            return completion.choices[0].message.content.strip()
 
         except Exception as e:
-            print(f"Failed to process the file with Librosa: {e}")
+            print(f"Error generating password: {e}")
+            return None
+
+def process_audio_file(file_path: str) -> Tuple[str, str]:
+    """Process a single audio file and return its hash and generated password."""
+    processor = AudioFeatureProcessor()
+    password_gen = AudioPasswordGenerator()
+
+    try:
+        # Load and process audio
+        y, sr = librosa.load(file_path, sr=None)
+        print(f"Loaded: {len(y)} samples, Sample Rate: {sr}")
+
+        # Extract features and create hash
+        features = processor.extract_features(y, sr)
+        audio_hash = processor.create_hash(features)
+
+        # Print feature information
+        print("\nExtracted Features:")
+        for key, value in features.items():
+            print(f"{key}: {value.shape if isinstance(value, np.ndarray) else len(value)}")
+
+        # Generate password
+        password = password_gen.generate_password(features, audio_hash)
+
+        return audio_hash, password
+
+    except Exception as e:
+        print(f"Failed to process file: {e}")
+        return None, None
+
+def process_audio_files(folder_path: str) -> None:
+    """Process all audio files in the specified folder."""
+    if not os.path.exists(folder_path):
+        print(f"The folder {folder_path} does not exist.")
+        return
+
+    results = []
+
+    for file_name in os.listdir(folder_path):
+        if not file_name.endswith(".mp3"):
+            continue
+
+        file_path = os.path.join(folder_path, file_name)
+        print(f"\nProcessing file: {file_name}")
+
+        audio_hash, password = process_audio_file(file_path)
+
+        if audio_hash and password:
+            print(f"\nGenerated Hash: {audio_hash}")
+            print(f"Generated Password: {password}")
+            results.append({
+                "file": file_name,
+                "hash": audio_hash,
+                "password": password
+            })
 
         print("-" * 50)
 
-print("Processing completed.")
+    # Save results to a file
+    if results:
+        with open("audio_passwords.txt", "w") as f:
+            for result in results:
+                f.write(f"File: {result['file']}\n")
+                f.write(f"Hash: {result['hash']}\n")
+                f.write(f"Password: {result['password']}\n")
+                f.write("-" * 50 + "\n")
+        print("\nResults saved to audio_passwords.txt")
+
+    print("Processing completed.")
+
+if __name__ == "__main__":
+    # Set your audio folder path
+    AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
+
+    try:
+        process_audio_files(AUDIO_FOLDER_PATH)
+    except Exception as e:
+        print(f"An error occurred: {e}")
