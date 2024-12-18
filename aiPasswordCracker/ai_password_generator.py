@@ -12,70 +12,64 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 class AIPasswordGenerator:
-    def _format_features_for_prompt(self, features, audio_hash):
+    def _format_features_for_prompt(self, features):
         """
-        Format audio features into a readable, thematic string for the AI prompt.
-        Add logic to reflect characteristics of the audio in symbolic form.
+        Format audio features into a thematic prompt for the AI without referencing the hash.
+        This function interprets the audio features in a musical/sonic context and gives the AI guidance
+        on how to reflect these characteristics in the password.
         """
-        
-        # Example: Use the mean of some features to decide which symbols to use
         mean_mfcc = np.mean(features["MFCCs"])
         mean_spectral_centroid = np.mean(features["Spectral Centroid"])
-        tempo = float(features["Tempo"][0]) if len(features["Tempo"]) > 0 else 120.0  # default tempo if missing
+        tempo = float(features["Tempo"][0]) if len(features["Tempo"]) > 0 else 120.0
         beats_count = len(features["Beats"])
 
-        description = f"Audio Hash: {audio_hash}\n"
-        description += "Audio Characterization:\n"
-
-        # High spectral centroid = bright / high-frequency → use ^ or * symbols
+        description = "The audio characteristics:\n"
         if mean_spectral_centroid > 2000:
-            description += "- Bright, high-frequency tones (use ^, *)\n"
+            description += "- Bright, high-frequency tones (use symbols like ^, *)\n"
         else:
-            description += "- Mellow, low-frequency tones (use ~, _)\n"
+            description += "- Mellow, low-frequency tones (use symbols like ~, _)\n"
 
-        # High MFCC mean might imply richer harmonic content → use uppercase letters
         if mean_mfcc > 0:
-            description += "- Rich harmonic profile (use uppercase letters)\n"
+            description += "- Rich harmonic profile (mix uppercase and lowercase letters)\n"
         else:
-            description += "- Darker harmonic profile (use lowercase letters)\n"
+            description += "- Darker harmonic profile (lean on lowercase letters)\n"
 
-        # Tempo reflection: faster tempo → more digits or special characters
         if tempo > 120:
-            description += f"- Energetic (tempo: {tempo:.2f} BPM) → Add numbers\n"
+            description += f"- Energetic tempo ({tempo:.2f} BPM) → include more numbers\n"
         else:
-            description += f"- Relaxed (tempo: {tempo:.2f} BPM) → Add fewer numbers\n"
+            description += f"- Relaxed tempo ({tempo:.2f} BPM) → fewer numbers\n"
 
-        # Beats count influences complexity
         if beats_count > 100:
-            description += "- Many beats → More special characters\n"
+            description += "- Many beats → use more special characters (#, @, &, etc.)\n"
         else:
-            description += "- Few beats → Fewer special characters\n"
-        
+            description += "- Few beats → fewer special characters\n"
+
         return description
 
-    def generate_password(self, features, audio_hash):
+    def generate_password(self, features):
         """
-        Generate a secure password using these audio characteristics.
+        Generate a secure password based solely on the thematic interpretation of audio features.
         """
         try:
-            formatted_features = self._format_features_for_prompt(features, audio_hash)
+            formatted_features = self._format_features_for_prompt(features)
+
             prompt = f"""
-            Generate a secure password using these audio characteristics:
+            Generate a secure password that reflects these audio characteristics:
             
             {formatted_features}
-
+            
             Requirements:
             - Length between 16 and 32 characters
             - Include uppercase and lowercase letters
             - Include numbers
-            - Include special characters (some from: ^, *, ~, _, #, @, &)
-            - Reflect the 'bright' or 'mellow' nature of the audio
-            - Reflect the 'rich' or 'dark' harmonic profile
-            - If energetic, include more numbers
-            - If many beats, include more special characters
+            - Include special characters (e.g. ^, *, ~, _, #, @, &)
+            - Reflect brightness or mellowness in symbol choice
+            - Reflect harmonic richness or darkness in letter case choice
+            - Reflect tempo in number usage
+            - Reflect beats in special character usage
             - No obvious patterns
             - Must be cryptographically strong
-
+            
             Return only the password with no additional text.
             """
 
@@ -85,7 +79,7 @@ class AIPasswordGenerator:
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,  # reduce randomness for consistency
+                temperature=0,  # Keep temperature at 0 for more deterministic output
                 top_p=1,
                 frequency_penalty=0,
                 presence_penalty=0
@@ -98,22 +92,20 @@ class AIPasswordGenerator:
             return None
 
 if __name__ == "__main__":
-    # Example usage (just a demonstration):
-    # Assuming we already have 'features' and 'audio_hash' from audio_feature_extraction.py
-    # This is just a mock-up array for demonstration purposes.
+    # Example usage with mock features.
+    # In practice, you would get these from your audio_feature_extraction code.
     sample_features = {
         "MFCCs": np.random.randn(1000),
-        "Spectral Centroid": np.random.randn(2000) + 2000,  # somewhat high
+        "Spectral Centroid": np.random.randn(2000) + 1500,  # somewhat bright
         "Spectral Contrast": np.random.randn(2000),
-        "Tempo": np.array([150]),  # higher tempo
-        "Beats": np.array([1,2,3,4] * 200),  # many beats
+        "Tempo": np.array([130]),  # energetic
+        "Beats": np.array(range(200)),  # many beats
         "Harmonic Components": np.random.randn(1200),
         "Percussive Components": np.random.randn(1200),
         "Zero-Crossing Rate": np.random.randn(200),
         "Chroma Features (CENS)": np.random.randn(1200),
     }
 
-    sample_hash = "be57b3b83719a851fffac1968b22cc73"
-    gen = AIPasswordGenerator()
-    password = gen.generate_password(sample_features, sample_hash)
+    password_gen = AIPasswordGenerator()
+    password = password_gen.generate_password(sample_features)
     print("Generated Password:", password)
