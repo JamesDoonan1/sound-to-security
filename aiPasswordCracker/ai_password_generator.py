@@ -48,7 +48,7 @@ class AIPasswordGenerator:
 
     def generate_password(self, features):
         """
-        Generate a secure password based solely on the thematic interpretation of audio features.
+        Generate a secure password based on the thematic interpretation of audio features.
         """
         try:
             formatted_features = self._format_features_for_prompt(features)
@@ -79,7 +79,7 @@ class AIPasswordGenerator:
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,  # Keep temperature at 0 for more deterministic output
+                temperature=0,
                 top_p=1,
                 frequency_penalty=0,
                 presence_penalty=0
@@ -93,13 +93,13 @@ class AIPasswordGenerator:
 
 if __name__ == "__main__":
     # Example usage with mock features.
-    # In practice, you would get these from your audio_feature_extraction code.
+    
     sample_features = {
         "MFCCs": np.random.randn(1000),
-        "Spectral Centroid": np.random.randn(2000) + 1500,  # somewhat bright
+        "Spectral Centroid": np.random.randn(2000) + 1500,
         "Spectral Contrast": np.random.randn(2000),
-        "Tempo": np.array([130]),  # energetic
-        "Beats": np.array(range(200)),  # many beats
+        "Tempo": np.array([130]), 
+        "Beats": np.array(range(200)),
         "Harmonic Components": np.random.randn(1200),
         "Percussive Components": np.random.randn(1200),
         "Zero-Crossing Rate": np.random.randn(200),

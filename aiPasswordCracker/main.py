@@ -1,10 +1,10 @@
 import os
 import librosa
-from audio_feature_extraction import extract_features, create_hash
+from hash_password_generator import extract_features, create_hash
 from ai_password_generator import AIPasswordGenerator
-from key_derivation import derive_key_from_hash
-from encryption_utils import encrypt_password, decrypt_password
-from database_utils import initialize_db, store_encrypted_password, get_encrypted_password
+from symmetric_key_generation import derive_key_from_hash
+from encrypt_decrypt_password import encrypt_password, decrypt_password
+from database_control import initialize_db, store_encrypted_password, get_encrypted_password
 import numpy as np
 
 AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
@@ -13,7 +13,6 @@ if not os.path.exists(AUDIO_FOLDER_PATH):
     print(f"The folder {AUDIO_FOLDER_PATH} does not exist.")
     exit()
 
-# Initialize the database
 initialize_db()
 
 password_gen = AIPasswordGenerator()
@@ -34,7 +33,7 @@ for file_name in os.listdir(AUDIO_FOLDER_PATH):
         features = extract_features(y, sr)
 
         # Print a summary of the features
-        print("\nFeature Summary:")
+        print("\nFeature Summary:\n")
         for key, value in features.items():
             if isinstance(value, np.ndarray) and value.size > 0:
                 stats = {
@@ -48,7 +47,7 @@ for file_name in os.listdir(AUDIO_FOLDER_PATH):
                 print(f"{key}: No data or invalid feature array.")
 
         audio_hash = create_hash(features)
-        print(f"\nGenerated Hash: {audio_hash}")
+        print(f"\nGenerated Hash: {audio_hash}\n")
 
         # Derive key from hash
         key = derive_key_from_hash(audio_hash)
