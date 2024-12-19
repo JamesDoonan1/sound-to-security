@@ -1,10 +1,12 @@
 import os
 import numpy as np
+import librosa
 from dotenv import load_dotenv
 from openai import OpenAI
+from hash_password_generator import extract_features  # Import feature extraction function
 
+# Load API key from environment variables
 load_dotenv()
-
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY not found in environment variables")
@@ -91,21 +93,43 @@ class AIPasswordGenerator:
             print(f"Error generating password: {e}")
             return None
 
+
 if __name__ == "__main__":
-    # Example usage with mock features.
-    
-    sample_features = {
-        "MFCCs": np.random.randn(1000),
-        "Spectral Centroid": np.random.randn(2000) + 1500,
-        "Spectral Contrast": np.random.randn(2000),
-        "Tempo": np.array([130]), 
-        "Beats": np.array(range(200)),
-        "Harmonic Components": np.random.randn(1200),
-        "Percussive Components": np.random.randn(1200),
-        "Zero-Crossing Rate": np.random.randn(200),
-        "Chroma Features (CENS)": np.random.randn(1200),
-    }
+    # Path to audio files
+    AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
+
+    if not os.path.exists(AUDIO_FOLDER_PATH):
+        print(f"The folder {AUDIO_FOLDER_PATH} does not exist.")
+        exit()
 
     password_gen = AIPasswordGenerator()
-    password = password_gen.generate_password(sample_features)
-    print("Generated Password:", password)
+
+    # Process each audio file in the folder
+    for file_name in os.listdir(AUDIO_FOLDER_PATH):
+        if not file_name.endswith(".mp3"):
+            continue
+
+        file_path = os.path.join(AUDIO_FOLDER_PATH, file_name)
+        print(f"\nProcessing file: {file_name}")
+
+        try:
+            # Load the audio file
+            y, sr = librosa.load(file_path, sr=None)
+
+            # Extract audio features
+            features = extract_features(y, sr)
+
+            # Generate password based on extracted features
+            password = password_gen.generate_password(features)
+
+            if password:
+                print(f"Generated Password: {password}")
+            else:
+                print("Failed to generate password.")
+
+        except Exception as e:
+            print(f"Error processing file {file_name}: {e}")
+
+        print("-" * 50)
+
+    print("Processing completed.")
