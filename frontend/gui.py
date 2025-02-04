@@ -55,47 +55,73 @@ def on_test_password():
         # Create a pop-up window to show AI guesses dynamically
         ai_window = tk.Toplevel(app)
         ai_window.title("AI Cracking Process")
-        ai_window.geometry("400x400")
-        ai_window.configure(bg="#282c34")
+        ai_window.geometry("500x400")
+        ai_window.configure(bg="#1e1e1e")
 
         # Add a label for progress
-        progress_label = tk.Label(ai_window, text="AI is trying to guess your password...", 
-                                  font=("Helvetica", 12), fg="white", bg="#282c34")
+        progress_label = tk.Label(
+            ai_window,
+            text="AI is trying to guess your password...",
+            font=("Helvetica", 14, "bold"),
+            fg="#61dafb",
+            bg="#1e1e1e"
+        )
         progress_label.pack(pady=10)
 
-        # Create a text widget to display AI guesses in real-time
-        ai_attempts_box = tk.Text(ai_window, font=("Helvetica", 12), height=10, width=40, bg="#1e1e1e", fg="white")
-        ai_attempts_box.pack(pady=5)
+        # Frame for AI response
+        frame = tk.Frame(ai_window, bg="#282c34", bd=2, relief="ridge")
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Get AI guesses from the response
-        ai_attempts = result["ai_attack"].get("attempts", [])
+        # Scrollable AI Response Box
+        ai_attempts_box = tk.Text(
+            frame,
+            font=("Helvetica", 12),
+            height=10,
+            width=55,
+            wrap="word",
+            bg="#1e1e1e",
+            fg="white",
+            bd=0
+        )
+        ai_attempts_box.pack(side="left", fill="both", expand=True, padx=5, pady=5)
 
-        if not ai_attempts:
-            ai_attempts_box.insert(tk.END, "No AI guesses received.\n")
-        else:
-            # Show AI guessing process dynamically
+        # Add scrollbar
+        scrollbar = tk.Scrollbar(frame, command=ai_attempts_box.yview)
+        scrollbar.pack(side="right", fill="y")
+        ai_attempts_box.config(yscrollcommand=scrollbar.set)
+
+        # Get AI guesses from the response safely
+        ai_attack_results = result.get("ai_attack", {})
+        ai_attempts = ai_attack_results.get("attempts", [])
+        explanation = ai_attack_results.get("explanation", "")
+
+        if ai_attempts:
+            ai_attempts_box.insert(tk.END, "🔍 AI Generated These Password Variations:\n\n", "bold")
             for attempt in ai_attempts:
-                ai_attempts_box.insert(tk.END, f"AI tried: {attempt}\n")
-                ai_attempts_box.see(tk.END)  # Auto-scroll to latest attempt
-                ai_window.update_idletasks()  # Force UI to update dynamically
-                time.sleep(0.5)  # Add a delay to simulate AI thinking
+                ai_attempts_box.insert(tk.END, f"🔹 {attempt}\n")
+        elif explanation:
+            ai_attempts_box.insert(tk.END, "⚠️ AI Refusal Message:\n\n", "bold")
+            ai_attempts_box.insert(tk.END, explanation)
+
+        ai_attempts_box.config(state="disabled")  # Make text read-only
 
         # Display final results
         test_results = f"""
-        Brute Force:
-          Cracked: {result['brute_force']['cracked']}
-          Message: {result['brute_force'].get('message', '')}
-          Time Taken: {result['brute_force'].get('time_taken', 'N/A')} seconds
+        🛡️ Brute Force:
+          🔸 Cracked: {result['brute_force']['cracked']}
+          🔸 Message: {result['brute_force'].get('message', '')}
+          🔸 Time Taken: {result['brute_force'].get('time_taken', 'N/A')} seconds
 
-        Dictionary Attack:
-          Cracked: {result['dictionary_attack']['cracked']}
-          Message: {result['dictionary_attack'].get('message', '')}
+        📖 Dictionary Attack:
+          🔸 Cracked: {result['dictionary_attack']['cracked']}
+          🔸 Message: {result['dictionary_attack'].get('message', '')}
 
-        AI Attack:
-          Cracked: {result['ai_attack']['cracked']}
-          Message: {result['ai_attack'].get('message', '')}
-          Guess: {result['ai_attack'].get('guess', 'N/A')}
+        🤖 AI Attack:
+          🔸 Cracked: {ai_attack_results.get('cracked', False)}
+          🔸 Message: {ai_attack_results.get('message', '')}
+          🔸 Guess: {ai_attack_results.get('guess', 'N/A')}
         """
+
         result_label.config(text=test_results)
 
     except requests.RequestException as e:
