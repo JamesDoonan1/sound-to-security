@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from backend.services.passwords_service import process_audio_and_generate_password
 from backend.services.password_cracker import brute_force_crack, dictionary_attack
+from backend.services.ai_password_cracker import ai_crack_password  # New AI module
 
 
 # Initialize blueprint and logger
@@ -57,12 +58,7 @@ def generate_password():
 def test_password():
     """
     Endpoint to test the security of a given password.
-
-    Request:
-    - JSON with a 'password' field containing the password to test.
-
-    Response:
-    - Combined results from brute force and dictionary attacks.
+    Now includes AI-based password cracking details.
     """
     if not request.json or "password" not in request.json:
         return jsonify({"error": "Password not provided"}), 400
@@ -78,8 +74,13 @@ def test_password():
     dictionary_results = dictionary_attack(target_password)
     logging.info("Dictionary attack completed")
 
+    # Run AI-based attack
+    ai_results = ai_crack_password(target_password)
+    logging.info("AI-based attack completed")
+
     # Combine results and return
     return jsonify({
         "brute_force": brute_force_results,
-        "dictionary_attack": dictionary_results
+        "dictionary_attack": dictionary_results,
+        "ai_attack": ai_results  # AI now returns more details
     })

@@ -1,7 +1,12 @@
 import anthropic
+import os
+from dotenv import load_dotenv
 
-# Set your Claude API key
-anthropic_api_key = "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"
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve API key securely
+anthropic_api_key = os.getenv("CLAUDE_API_KEY")
 
 def generate_password_with_claude(features):
     """Generate a password using Claude AI based on extracted features."""
