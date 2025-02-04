@@ -2,7 +2,7 @@ import time
 import tkinter as tk
 import requests
 from tkinter import messagebox
-from vocal_passwords.voice_processing import record_audio
+from vocal_passwords.voice_processing import record_audio, verify_voice
 from vocal_passwords.feature_extraction import extract_audio_features
 from models.claude_password_generator import generate_password_with_claude
 
@@ -13,28 +13,32 @@ def on_generate():
     """Handles the process of generating a password from voice input."""
     global generated_password  
 
-    print("Step 1: Starting audio capture...")
+    print("Step 1: Recording voice...")
     audio, sr = record_audio()
-    
-    if audio is not None:
-        print("Step 2: Audio captured successfully. Proceeding to feature extraction...")
-        features = extract_audio_features(audio, sr)
-        print(f"Extracted features: {features}")
 
-        print("Step 3: Generating password using Claude...")
-        generated_password = generate_password_with_claude(features)
+    if audio is None:
+        result_label.config(text="❌ Voice capture failed!")
+        return
 
-        if "Error" not in generated_password:
-            print("Step 4: Password generation complete!")
-            result_label.config(text=f"Generated Password:\n{generated_password}")
-            test_button.config(state=tk.NORMAL)  # Enable the "Test Password" button
-        else:
-            print("Error: Failed to generate password.")
-            result_label.config(text="Error in generating password!")
+    print("Step 2: Verifying voice...")
+    if not verify_voice():
+        result_label.config(text="❌ Voice not recognized! Access denied.")
+        return
+
+    print("Step 3: Extracting features...")
+    features = extract_audio_features(audio, sr)
+
+    print("Step 4: Generating password...")
+    passphrase = "My Secure Phrase" 
+    generated_password = generate_password_with_claude(features, passphrase)
+
+    if "Error" not in generated_password:
+        print("✅ Password generated successfully!")
+        result_label.config(text=f"🔐 Generated Password:\n{generated_password}")
+        test_button.config(state=tk.NORMAL)
     else:
-        print("Error: Audio capture failed.")
-        result_label.config(text="Error in capturing audio!")
-
+        print("❌ Failed to generate password.")
+        result_label.config(text="❌ Error in generating password!")
 def on_test_password():
     """Handles testing the generated password for security with real-time AI updates."""
     global generated_password
