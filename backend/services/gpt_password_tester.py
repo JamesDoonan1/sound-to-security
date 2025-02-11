@@ -11,6 +11,10 @@ def test_password_with_gpt(password, passphrase, voice_features, max_attempts=3)
     Uses GPT-4 to analyze the password based on the spoken passphrase, prompt,
     and extracted voice features to simulate an AI hacker guessing the password.
     """
+    # 🔍 Debugging - Check what data is being sent
+    print(f"🛠 DEBUG: Sending Passphrase to GPT: {passphrase}")
+    print(f"🛠 DEBUG: Voice Features: {voice_features}")
+
     prompt = (
         "You are an AI security researcher trying to guess a password based on the given clues.\n"
         "You have access to:\n"
@@ -23,7 +27,7 @@ def test_password_with_gpt(password, passphrase, voice_features, max_attempts=3)
         f"  - Tempo: {voice_features['tempo']}\n\n"
         "Your task:\n"
         "1. Analyze the spoken passphrase for common password structures.\n"
-        "2. Generate up to 5 likely password variations based on secure password trends.\n"
+        "2. Generate up to 20 likely password variations based on secure password trends.\n"
         "3. Try to mimic an AI-generated password using uppercase, lowercase, numbers, and special characters.\n"
         "4. Return ONLY the list of password guesses (NO explanations).\n"
     )
@@ -60,4 +64,3 @@ def test_password_with_gpt(password, passphrase, voice_features, max_attempts=3)
             "attempts": [],
             "message": f"GPT error: {e}"
         }
-

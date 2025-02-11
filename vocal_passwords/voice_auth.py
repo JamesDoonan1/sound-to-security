@@ -11,8 +11,11 @@ AUTH_LOG_FILE = "authentication_log.csv"
 ### 🛠 VOICEPRINT STORAGE & VERIFICATION ###
 def save_voiceprint(voice_features):
     """Saves extracted voice features for authentication."""
-    np.save(VOICEPRINT_FILE, np.array(voice_features, dtype=np.float32))  # ✅ Ensure numeric format
-    print(f"💾 Voiceprint saved to {VOICEPRINT_FILE}")
+    try:
+        np.save(VOICEPRINT_FILE, np.array(voice_features, dtype=np.float32))
+        print(f"💾 Voiceprint saved successfully to {VOICEPRINT_FILE}")
+    except Exception as e:
+        print(f"❌ ERROR: Could not save voiceprint: {e}")
 
 def load_voiceprint():
     """Loads the stored voiceprint if it exists."""
@@ -44,9 +47,12 @@ def verify_voice(new_voice_features, threshold=50):
 ### 🛠 PASSPHRASE STORAGE & VERIFICATION ###
 def save_passphrase(passphrase):
     """Stores the user's spoken passphrase."""
-    with open(PASSPHRASE_FILE, "w") as f:
-        f.write(passphrase)
-    print(f"💾 Passphrase saved: {passphrase}")
+    try:
+        with open(PASSPHRASE_FILE, "w") as f:
+            f.write(passphrase)
+        print(f"💾 Passphrase saved successfully: {passphrase}")
+    except Exception as e:
+        print(f"❌ ERROR: Could not save passphrase: {e}")
 
 def load_passphrase():
     """Loads the stored passphrase if it exists."""

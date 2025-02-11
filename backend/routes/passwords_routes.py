@@ -69,16 +69,19 @@ def test_password():
         logging.warning("⚠️ No passphrase found, using placeholder.")
         passphrase = "UNKNOWN_PASSPHRASE"
 
-    if voice_features is None:
-        logging.warning("⚠️ No voice features found, using default values.")
-        voice_features = np.array([-999, -999, -999], dtype=np.float32)
+    voice_features = extract_voice_features()  # ✅ This is already a dictionary
 
-    # ✅ Convert NumPy array to dictionary for GPT testing
+    if voice_features is None:
+        logging.error("❌ Missing voice features for GPT test.")
+        return jsonify({"error": "Missing voice features for GPT test"}), 500
+
+    # ✅ FIXED: Use dictionary keys instead of list indexing
     voice_features_dict = {
-        "mfcc": float(voice_features[0]),
-        "spectral_centroid": float(voice_features[1]),
-        "tempo": float(voice_features[2])
+        "mfcc": float(voice_features["mfcc"]),
+        "spectral_centroid": float(voice_features["spectral_centroid"]),
+        "tempo": float(voice_features["tempo"]),
     }
+
 
     # ✅ Perform the requested test
     try:
