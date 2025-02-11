@@ -49,8 +49,20 @@ def on_generate():
         print(f"Recognized Passphrase: {passphrase}")
 
         print("Step 4: Saving voiceprint & passphrase...")
-        save_voiceprint(features)
-        save_passphrase(passphrase)  
+        save_voiceprint(features)  
+        save_passphrase(passphrase)
+
+        # ✅ Debugging: Confirm files are saved correctly
+        if os.path.exists("stored_passphrase.txt"):
+            print("✅ Passphrase saved successfully.")
+        else:
+            print("❌ ERROR: Passphrase not saved!")
+
+        if os.path.exists("stored_voiceprint.npy"):
+            print("✅ Voiceprint saved successfully.")
+        else:
+            print("❌ ERROR: Voiceprint not saved!")
+        
 
         print("Step 5: Generating AI password with Claude...")
         generated_password = generate_password_with_claude(features)

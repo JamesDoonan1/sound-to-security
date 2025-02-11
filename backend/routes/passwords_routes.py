@@ -1,11 +1,13 @@
+import numpy as np
 import os
 import logging
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from backend.services.passwords_service import process_audio_and_generate_password
-from backend.services.password_cracker import brute_force_crack, dictionary_attack
+from backend.services.password_cracker import brute_force_crack
 from backend.services.ai_password_cracker import ai_crack_password  # Existing AI module
 from backend.services.gpt_password_tester import test_password_with_gpt  # ✅ New GPT testing module
+from backend.services.passwords_service import extract_passphrase, extract_voice_features
 
 # Initialize blueprint and logger
 passwords_routes = Blueprint("passwords_routes", __name__)
@@ -16,23 +18,13 @@ os.makedirs(TEMP_DIR, exist_ok=True)  # Ensure the temp directory exists
 
 @passwords_routes.route("/", methods=["GET"])
 def home():
-    """
-    Default route for the root URL.
-    """
+    """ Default route for the root URL. """
     return jsonify({"message": "Welcome to the Password Generator API!"})
-
 
 @passwords_routes.route("/api/generate-password", methods=["POST"])
 def generate_password():
     """
     Endpoint to accept audio data, extract features, and generate a password.
-
-    Request:
-    - Form-data with an 'audio' field containing the audio file.
-
-    Response:
-    - Success: {"password": "<generated_password>"}
-    - Failure: {"error": "<error_message>"}
     """
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
@@ -53,24 +45,54 @@ def generate_password():
         logging.error(f"❌ Error generating password: {e}")
         return jsonify({"error": str(e)}), 500
 
-
 @passwords_routes.route("/api/test-password", methods=["POST"])
 def test_password():
-    """Endpoint to test password security with AI and brute-force."""
+    """
+    Endpoint to test password security using GPT-4, Claude, and brute-force attacks.
+    Handles missing passphrase and voice features correctly.
+    """
+
     if not request.json or "password" not in request.json:
         return jsonify({"error": "Password not provided"}), 400
 
     target_password = request.json.get("password")
-    test_type = request.json.get("test_type")  # Identify which test is being requested
-    logging.info(f"Testing password security for: {target_password} with {test_type}")
+    test_type = request.json.get("test_type", "gpt")  # Default to GPT
 
-    if test_type == "gpt":
-        result = test_password_with_gpt(target_password)
-    elif test_type == "claude":
-        result = ai_crack_password(target_password)
-    elif test_type == "brute":
-        result = brute_force_crack(target_password)
-    else:
-        result = {"error": "Invalid test type"}
+    logging.info(f"🔍 Testing password security for: {target_password} using {test_type}")
 
-    return jsonify(result)
+    # ✅ Extract passphrase and voice features
+    passphrase = extract_passphrase()
+    voice_features = extract_voice_features()
+
+    # ✅ Handle missing passphrase and voice features gracefully
+    if passphrase is None:
+        logging.warning("⚠️ No passphrase found, using placeholder.")
+        passphrase = "UNKNOWN_PASSPHRASE"
+
+    if voice_features is None:
+        logging.warning("⚠️ No voice features found, using default values.")
+        voice_features = np.array([-999, -999, -999], dtype=np.float32)
+
+    # ✅ Convert NumPy array to dictionary for GPT testing
+    voice_features_dict = {
+        "mfcc": float(voice_features[0]),
+        "spectral_centroid": float(voice_features[1]),
+        "tempo": float(voice_features[2])
+    }
+
+    # ✅ Perform the requested test
+    try:
+        if test_type == "gpt":
+            result = test_password_with_gpt(target_password, passphrase, voice_features_dict)
+        elif test_type == "claude":
+            result = ai_crack_password(target_password)
+        elif test_type == "brute":
+            result = brute_force_crack(target_password)
+        else:
+            result = {"error": "Invalid test type"}
+
+        return jsonify(result)
+
+    except Exception as e:
+        logging.error(f"❌ Error during {test_type} password testing: {e}")
+        return jsonify({"error": f"{test_type} test failed: {str(e)}"}), 500
