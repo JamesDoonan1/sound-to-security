@@ -1,10 +1,12 @@
 import numpy as np
 import os
+import csv
 import speech_recognition as sr
 
 # File paths for stored data
 VOICEPRINT_FILE = "stored_voiceprint.npy"
 PASSPHRASE_FILE = "stored_passphrase.txt"
+AUTH_LOG_FILE = "authentication_log.csv"
 
 ### 🛠 VOICEPRINT STORAGE & VERIFICATION ###
 def save_voiceprint(voice_features):
@@ -82,3 +84,27 @@ def recognize_speech(audio_path):
     except sr.RequestError:
         print("🚫 Error with speech recognition API.")
         return "ERROR"
+
+
+### 🛠 LOGGING AUTHENTICATION ATTEMPTS ###
+def log_authentication_result(passphrase, voice_match, password_match):
+    """Logs authentication attempts to a CSV file."""
+    file_exists = os.path.isfile(AUTH_LOG_FILE)
+
+    with open(AUTH_LOG_FILE, mode="a", newline="") as file:
+        writer = csv.writer(file)
+
+        if not file_exists:
+            writer.writerow(["Passphrase", "Voice Match", "Password Match"])  # Header
+
+        writer.writerow([passphrase, voice_match, password_match])
+
+def verify_login(features, spoken_passphrase, entered_password, stored_password):
+    """Verifies voice, passphrase, and password for authentication."""
+    voice_match = verify_voice(features)
+    passphrase_match = verify_passphrase(spoken_passphrase)
+    password_match = entered_password == stored_password
+
+    log_authentication_result(spoken_passphrase, voice_match, password_match)
+
+    return voice_match and passphrase_match and password_match
