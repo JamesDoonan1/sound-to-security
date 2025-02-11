@@ -4,8 +4,8 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from backend.services.passwords_service import process_audio_and_generate_password
 from backend.services.password_cracker import brute_force_crack, dictionary_attack
-from backend.services.ai_password_cracker import ai_crack_password  # New AI module
-
+from backend.services.ai_password_cracker import ai_crack_password  # Existing AI module
+from backend.services.gpt_password_tester import test_password_with_gpt  # ✅ New GPT testing module
 
 # Initialize blueprint and logger
 passwords_routes = Blueprint("passwords_routes", __name__)
@@ -47,10 +47,10 @@ def generate_password():
 
     try:
         password = process_audio_and_generate_password(audio_path)
-        logging.info(f"Password successfully generated: {password}")
+        logging.info(f"✅ Password successfully generated: {password}")
         return jsonify({"password": password}), 200
     except Exception as e:
-        logging.error(f"Error generating password: {e}")
+        logging.error(f"❌ Error generating password: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -58,29 +58,38 @@ def generate_password():
 def test_password():
     """
     Endpoint to test the security of a given password.
-    Now includes AI-based password cracking details.
+    Now includes GPT-4-based password cracking details.
     """
     if not request.json or "password" not in request.json:
         return jsonify({"error": "Password not provided"}), 400
 
     target_password = request.json.get("password")
-    logging.info(f"Testing password security for: {target_password}")
+    logging.info(f"🔍 Testing password security for: {target_password}")
 
     # Run brute force attack
     brute_force_results = brute_force_crack(target_password)
-    logging.info("Brute force attack completed")
+    logging.info("🛠 Brute force attack completed.")
 
     # Run dictionary attack
     dictionary_results = dictionary_attack(target_password)
-    logging.info("Dictionary attack completed")
+    logging.info("📖 Dictionary attack completed.")
 
     # Run AI-based attack
     ai_results = ai_crack_password(target_password)
-    logging.info("AI-based attack completed")
+    logging.info("🤖 AI-based attack completed.")
+
+    # ✅ Run GPT-4 Turbo password cracking test
+    gpt_cracked, gpt_guesses = test_password_with_gpt(target_password)
+    logging.info("🚀 GPT-4 password analysis completed.")
 
     # Combine results and return
     return jsonify({
         "brute_force": brute_force_results,
         "dictionary_attack": dictionary_results,
-        "ai_attack": ai_results  # AI now returns more details
+        "ai_attack": ai_results,  # AI now returns more details
+        "gpt_attack": {
+            "cracked": gpt_cracked,
+            "attempts": gpt_guesses,
+            "message": "GPT-4 attempted to guess the password using AI pattern recognition."
+        }
     })
