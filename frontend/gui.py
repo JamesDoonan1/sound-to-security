@@ -11,10 +11,9 @@ from models.claude_password_generator import generate_password_with_claude
 VOICEPRINT_FILE = "stored_voiceprint.npy"
 PASSWORD_FILE = "generated_password.txt"
 
-# Global variable to store the generated password
+# Global variables to store the generated password and test results
 generated_password = None  
 test_results = {}  # Stores test results for comparison
-
 
 def save_password(password):
     """Save the AI-generated password for login verification."""
@@ -91,6 +90,7 @@ def test_with_gpt():
         response.raise_for_status()
         test_results["GPT"] = response.json()
 
+        print("✅ GPT Response:", test_results["GPT"])  # Debugging output
         result_label.config(text="✅ GPT test completed. Click 'Compare AI Results' to view.")
     except requests.RequestException as e:
         print(f"❌ Error during GPT password testing: {e}")
@@ -113,6 +113,7 @@ def test_with_claude():
         response.raise_for_status()
         test_results["Claude"] = response.json()
 
+        print("✅ Claude Response:", test_results["Claude"])  # Debugging output
         result_label.config(text="✅ Claude test completed. Click 'Compare AI Results' to view.")
     except requests.RequestException as e:
         print(f"❌ Error during Claude password testing: {e}")
@@ -150,7 +151,7 @@ def compare_ai_results():
 
     compare_window = tk.Toplevel(app)
     compare_window.title("AI Cracking Comparison")
-    compare_window.geometry("600x400")
+    compare_window.geometry("600x500")
     compare_window.configure(bg="#1e1e1e")
 
     tk.Label(compare_window, text="🔍 AI Password Testing Results", font=("Helvetica", 16, "bold"), fg="white", bg="#1e1e1e").pack(pady=10)
@@ -158,7 +159,13 @@ def compare_ai_results():
     for test_type, result in test_results.items():
         tk.Label(compare_window, text=f"🛠 {test_type} Test:", font=("Helvetica", 14, "bold"), fg="#61dafb", bg="#1e1e1e").pack(pady=5)
         tk.Label(compare_window, text=f"✅ Cracked: {result.get('cracked', 'Unknown')}", font=("Helvetica", 12), fg="white", bg="#1e1e1e").pack()
-        tk.Label(compare_window, text=f"📝 Attempts: {result.get('attempts', 'N/A')}", font=("Helvetica", 12), fg="white", bg="#1e1e1e").pack()
+
+        explanation = result.get("explanation", "N/A")
+        if explanation and explanation != "N/A":
+            tk.Label(compare_window, text=f"📄 Explanation: {explanation}", font=("Helvetica", 12), fg="#FFA500", bg="#1e1e1e").pack()
+
+        attempts = result.get("attempts", "N/A")
+        tk.Label(compare_window, text=f"📋 Attempts: {attempts}", font=("Helvetica", 12), fg="white", bg="#1e1e1e").pack()
         tk.Label(compare_window, text="---------------------------------", fg="gray", bg="#1e1e1e").pack()
 
 # Create main app window

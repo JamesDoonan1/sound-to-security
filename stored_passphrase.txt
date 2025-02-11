@@ -1,1 +1,1 @@
-crossword generate
+generate password

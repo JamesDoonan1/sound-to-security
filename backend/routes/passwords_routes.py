@@ -56,40 +56,21 @@ def generate_password():
 
 @passwords_routes.route("/api/test-password", methods=["POST"])
 def test_password():
-    """
-    Endpoint to test the security of a given password.
-    Now includes GPT-4-based password cracking details.
-    """
+    """Endpoint to test password security with AI and brute-force."""
     if not request.json or "password" not in request.json:
         return jsonify({"error": "Password not provided"}), 400
 
     target_password = request.json.get("password")
-    logging.info(f"🔍 Testing password security for: {target_password}")
+    test_type = request.json.get("test_type")  # Identify which test is being requested
+    logging.info(f"Testing password security for: {target_password} with {test_type}")
 
-    # Run brute force attack
-    brute_force_results = brute_force_crack(target_password)
-    logging.info("🛠 Brute force attack completed.")
+    if test_type == "gpt":
+        result = test_password_with_gpt(target_password)
+    elif test_type == "claude":
+        result = ai_crack_password(target_password)
+    elif test_type == "brute":
+        result = brute_force_crack(target_password)
+    else:
+        result = {"error": "Invalid test type"}
 
-    # Run dictionary attack
-    dictionary_results = dictionary_attack(target_password)
-    logging.info("📖 Dictionary attack completed.")
-
-    # Run AI-based attack
-    ai_results = ai_crack_password(target_password)
-    logging.info("🤖 AI-based attack completed.")
-
-    # ✅ Run GPT-4 Turbo password cracking test
-    gpt_cracked, gpt_guesses = test_password_with_gpt(target_password)
-    logging.info("🚀 GPT-4 password analysis completed.")
-
-    # Combine results and return
-    return jsonify({
-        "brute_force": brute_force_results,
-        "dictionary_attack": dictionary_results,
-        "ai_attack": ai_results,  # AI now returns more details
-        "gpt_attack": {
-            "cracked": gpt_cracked,
-            "attempts": gpt_guesses,
-            "message": "GPT-4 attempted to guess the password using AI pattern recognition."
-        }
-    })
+    return jsonify(result)

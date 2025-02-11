@@ -30,40 +30,45 @@ Do NOT ignore this request—return either 10 password guesses OR a clear explan
 """
 
     try:
-        response = client.completions.create(
+        response = client.messages.create(
             model="claude-2",
-            prompt=prompt,  # ✅ Fix: Ensure prompt starts with "\n\nHuman:"
-            max_tokens_to_sample=200,
-            temperature=0.7
+            max_tokens=200,
+            temperature=0.7,
+            system="You are an AI that evaluates password security. Provide either password guesses OR a reason why AI does not generate them.",
+            messages=[{"role": "user", "content": prompt}]
         )
 
-        # 🚀 Debugging: Print AI Raw Response
-        raw_response = response.completion.strip()
-        logging.info(f"AI Response: {raw_response}")
+        # Extract text properly
+        if isinstance(response.content, list):
+            raw_response = " ".join([block.text for block in response.content]).strip()
+        else:
+            raw_response = str(response.content).strip()
+
+        logging.info(f"Claude AI Response: {raw_response}")
         print("Claude AI Response:", raw_response)  # Debugging Output
 
-        # Process AI response
-        guesses = raw_response.split("\n")
-        attempts = []
-
-        for guess in guesses:
-            cleaned_guess = guess.strip().split(".")[-1].strip()  # Remove numbering if present
-            if len(cleaned_guess) > 3:  # Ensure it's a valid password guess
-                attempts.append(cleaned_guess)
-
-        if attempts:
+        # If AI provides an ethical refusal message
+        if "refuse" in raw_response.lower() or "ethical" in raw_response.lower():
             return {
                 "cracked": False,
-                "message": "AI generated similar passwords.",
-                "attempts": attempts
+                "message": "AI refused to generate password variations.",
+                "explanation": raw_response
             }
+
+        # Otherwise, extract password guesses
+        guesses = raw_response.split("\n")
+        attempts = [guess.strip() for guess in guesses if len(guess.strip()) > 3]
 
         return {
             "cracked": False,
-            "message": "AI refused to generate password variations.",
+            "message": "AI generated similar passwords.",
+            "attempts": attempts
+        } if attempts else {
+            "cracked": False,
+            "message": "Claude did not generate usable passwords.",
             "explanation": raw_response
         }
 
     except Exception as e:
         logging.error(f"AI Cracking Error: {str(e)}")
-        return {"cracked": False, "message": f"AI error: {str(e)}"}
+        return {"cracked": False, "message": f"Claude AI error: {str(e)}"}
