@@ -180,6 +180,43 @@ def compare_ai_results():
         tk.Label(compare_window, text=f"📋 Attempts: {attempts}", font=("Helvetica", 12), fg="white", bg="#1e1e1e").pack()
         tk.Label(compare_window, text="---------------------------------", fg="gray", bg="#1e1e1e").pack()
 
+def on_login():
+    """Handles voice-based login authentication."""
+    print("🔐 Step 1: Recording login voice...")
+    audio, sr = record_audio()
+    
+    if audio is not None:
+        print("🔍 Step 2: Extracting login voice features...")
+        features = extract_audio_features(audio, sr)
+        
+        print("🛠 Step 3: Verifying voiceprint...")
+        if verify_voice(features):
+            print("✅ Voice matched! Checking passphrase...")
+            recognized_passphrase = recognize_speech("vocal_input.wav")  
+            stored_passphrase = load_password()
+
+            if verify_passphrase(recognized_passphrase):
+                print("✅ Passphrase matched! Now verifying AI-generated password...")
+                user_entered_password = simpledialog.askstring("Password Required", "Enter the AI-generated password:")
+                stored_password = load_password()
+
+                if user_entered_password == stored_password:
+                    print("✅ Access Granted! 🎉")
+                    result_label.config(text="✅ Access Granted! 🎉")
+                else:
+                    print("❌ Incorrect AI-generated password. Access Denied.")
+                    result_label.config(text="❌ Incorrect AI-generated password.")
+            else:
+                print("❌ Incorrect passphrase. Access Denied.")
+                result_label.config(text="❌ Incorrect passphrase.")
+        else:
+            print("❌ Access Denied! Voice does not match.")
+            result_label.config(text="❌ Access Denied! Voice does not match.")
+    else:
+        print("❌ Error: Audio capture failed.")
+        result_label.config(text="❌ Error in capturing audio!")
+
+
 # Create main app window
 app = tk.Tk()
 app.title("Secure AI Password Generator")
@@ -206,5 +243,8 @@ compare_button.pack(pady=5)
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")
 result_label.pack(pady=20)
+
+login_button = tk.Button(app, text="Login", font=("Helvetica", 14), bg="lightblue", command=on_login)
+login_button.pack(pady=10) 
 
 app.mainloop()
