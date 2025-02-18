@@ -1,7 +1,6 @@
 import subprocess
 import os
 
-# Update this path if your Hashcat installation is elsewhere
 HASHCAT_PATH = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
 HASH_FILE = "password_hash.txt"  # Hash file location (temporary storage)
 WORDLIST_FILE = "wordlist.txt"  # Custom wordlist for dictionary attack

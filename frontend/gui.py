@@ -1,6 +1,7 @@
 import requests
 import os
 import tkinter as tk
+import requests
 from tkinter import messagebox, simpledialog
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
@@ -77,6 +78,7 @@ def on_generate():
             claude_test_button.config(state=tk.NORMAL)
             brute_test_button.config(state=tk.NORMAL)
             compare_button.config(state=tk.NORMAL)
+            hashcat_test_button.config(state=tk.NORMAL)
 
         else:
             print("❌ Error: Failed to generate password.")
@@ -216,6 +218,30 @@ def on_login():
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
 
+def test_with_hashcat():
+    """Sends hashed password to the backend for Hashcat cracking."""
+    global generated_password
+
+    if not generated_password:
+        messagebox.showerror("Error", "No password available to test.")
+        return
+
+    print("🔍 Testing password security with Hashcat...")
+    result_label.config(text="Testing password with Hashcat... Please wait.")
+
+    try:
+        url = "http://127.0.0.1:5000/api/test-password-hashcat"
+        response = requests.post(url, json={"password_hash": generated_password, "hash_type": "0", "attack_mode": "3"})
+        response.raise_for_status()
+        result = response.json()
+
+        print("✅ Hashcat Response:", result)
+        result_label.config(text=f"✅ Hashcat test result: {result['result']}")
+
+    except requests.RequestException as e:
+        print(f"❌ Error during Hashcat password testing: {e}")
+        result_label.config(text="❌ Error in testing password with Hashcat!")
+
 
 # Create main app window
 app = tk.Tk()
@@ -237,6 +263,10 @@ claude_test_button.pack(pady=5)
 
 brute_test_button = tk.Button(app, text="Test Brute Force & Dictionary", font=("Helvetica", 14), bg="#DC143C", command=test_with_brute_force, state=tk.DISABLED)
 brute_test_button.pack(pady=5)
+
+hashcat_test_button = tk.Button(app, text="Test with Hashcat", font=("Helvetica", 14), bg="#FF5733", command=test_with_hashcat, state=tk.DISABLED)
+hashcat_test_button.pack(pady=5)
+
 
 compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", command=compare_ai_results, state=tk.DISABLED)
 compare_button.pack(pady=5)

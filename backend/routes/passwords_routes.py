@@ -8,6 +8,8 @@ from backend.services.password_cracker import brute_force_crack
 from backend.services.ai_password_cracker import ai_crack_password  # Existing AI module
 from backend.services.gpt_password_tester import test_password_with_gpt  # ✅ New GPT testing module
 from backend.services.passwords_service import extract_passphrase, extract_voice_features
+from services.hashcat_cracker import save_hash, crack_password_with_hashcat
+
 
 # Initialize blueprint and logger
 passwords_routes = Blueprint("passwords_routes", __name__)
@@ -99,3 +101,22 @@ def test_password():
     except Exception as e:
         logging.error(f"❌ Error during {test_type} password testing: {e}")
         return jsonify({"error": f"{test_type} test failed: {str(e)}"}), 500
+
+@passwords_routes.route("/api/test-password-hashcat", methods=["POST"])
+def test_password_with_hashcat():
+    """API to test password security using Hashcat."""
+    data = request.get_json()
+    password_hash = data.get("password_hash")
+    hash_type = data.get("hash_type", "0")  # Default MD5
+    attack_mode = data.get("attack_mode", "3")  # Default brute-force
+
+    if not password_hash:
+        return jsonify({"error": "❌ No password hash provided!"}), 400
+
+    # Save the hash for Hashcat
+    save_hash(password_hash)
+
+    # Run Hashcat to crack the hash
+    cracked, result = crack_password_with_hashcat(hash_type, attack_mode)
+
+    return jsonify({"cracked": cracked, "result": result}), 200
