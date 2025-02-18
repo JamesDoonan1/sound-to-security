@@ -2,6 +2,8 @@ import requests
 import os
 import tkinter as tk
 import requests
+import hashlib
+import subprocess
 from tkinter import messagebox, simpledialog
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
@@ -27,6 +29,11 @@ def load_password():
         with open(PASSWORD_FILE, "r") as f:
             return f.read().strip()
     return None
+
+def hash_password(password):
+    """Hashes a password using SHA-256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 
 def on_generate():
     """Handles the process of generating a password from voice input."""
@@ -64,12 +71,20 @@ def on_generate():
         else:
             print("❌ ERROR: Voiceprint not saved!")
         
-
         print("Step 5: Generating AI password with Claude...")
         generated_password = generate_password_with_claude(features)
 
         if generated_password and "Error" not in generated_password:
             print(f"✅ Generated Password: {generated_password}")
+
+             # Hash the password before saving it
+            hashed_password = hash_password(generated_password)
+            print(f"🔐 Hashed Password: {hashed_password}")
+
+            # Save the hashed password to a file so Hashcat can attempt to crack it
+            with open("hashed_password.txt", "w") as f:
+                f.write(hashed_password)
+
             save_password(generated_password)  
             result_label.config(text=f"🔐 Generated Password:\n{generated_password}")
 
@@ -80,9 +95,6 @@ def on_generate():
             compare_button.config(state=tk.NORMAL)
             hashcat_test_button.config(state=tk.NORMAL)
 
-        else:
-            print("❌ Error: Failed to generate password.")
-            result_label.config(text="❌ Error in generating password!")
     else:
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
@@ -219,26 +231,67 @@ def on_login():
         result_label.config(text="❌ Error in capturing audio!")
 
 def test_with_hashcat():
-    """Sends hashed password to the backend for Hashcat cracking."""
-    global generated_password
+    """Runs Hashcat to attempt cracking the hashed password."""
+    global generated_password, test_results
 
     if not generated_password:
         messagebox.showerror("Error", "No password available to test.")
         return
 
-    print("🔍 Testing password security with Hashcat...")
-    result_label.config(text="Testing password with Hashcat... Please wait.")
+    print("🔍 Running Hashcat attack...")
+    result_label.config(text="Running Hashcat attack... Please wait.")
 
     try:
-        url = "http://127.0.0.1:5000/api/test-password-hashcat"
-        response = requests.post(url, json={"password_hash": generated_password, "hash_type": "0", "attack_mode": "3"})
-        response.raise_for_status()
-        result = response.json()
+        # ✅ Full path to Hashcat
+        hashcat_path = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
+        
+        # ✅ Check if hashed_password.txt exists
+        if not os.path.exists("hashed_password.txt"):
+            print("❌ Error: hashed_password.txt not found!")
+            result_label.config(text="❌ hashed_password.txt not found!")
+            return
+        
+        # ✅ Check if rockyou.txt exists
+        wordlist_path = "rockyou.txt"
+        if not os.path.exists(wordlist_path):
+            print("❌ Error: rockyou.txt not found! Download and place it in the same folder.")
+            result_label.config(text="❌ rockyou.txt not found! Download and place it in the same folder.")
+            return
 
-        print("✅ Hashcat Response:", result)
-        result_label.config(text=f"✅ Hashcat test result: {result['result']}")
+        # ✅ Define SHA-256 Hash Mode (1400 for SHA-256)
+        hash_mode = "1400"
 
-    except requests.RequestException as e:
+        command = [
+            hashcat_path,  # ✅ Full Hashcat Path
+            "-m", hash_mode,  # ✅ SHA-256 Hash Mode
+            "-a", "0",  # ✅ Dictionary Attack Mode
+            "hashed_password.txt",  # ✅ Input Hash File
+            wordlist_path,  # ✅ Wordlist File
+            "--force"
+        ]
+
+        # ✅ Run Hashcat and Capture Output
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        hashcat_output = ""
+        for line in process.stdout:
+            print("🔥 Hashcat Output:", line.strip())  # Print real-time output
+            hashcat_output += line.strip() + "\n"
+
+        process.wait()
+
+        # ✅ Process Hashcat Results
+        if "Recovered" in hashcat_output or "Cracked" in hashcat_output:
+            cracked = True
+            result_text = "✅ Hashcat cracked the password!"
+        else:
+            cracked = False
+            result_text = "❌ No password cracked!"
+
+        test_results["Hashcat"] = {"cracked": cracked, "result": result_text, "output": hashcat_output}
+        result_label.config(text=result_text)
+
+    except Exception as e:
         print(f"❌ Error during Hashcat password testing: {e}")
         result_label.config(text="❌ Error in testing password with Hashcat!")
 
