@@ -15,24 +15,6 @@ OUTPUT_JSON_FILE = "audio_data.json"
 # A global list to store data for JSON
 audio_data_list = []
 
-def print_feature_summary(features):
-    """
-    Prints a statistical summary of extracted features.
-    """
-    print("\nFeature Summary:\n")
-    for key, value in features.items():
-        if isinstance(value, np.ndarray) and value.size > 0:
-            stats = {
-                "mean": np.mean(value),
-                "max": np.max(value),
-                "min": np.min(value),
-                "std": np.std(value)
-            }
-            print(f"{key}: mean={stats['mean']:.4f}, max={stats['max']:.4f}, "
-                  f"min={stats['min']:.4f}, std={stats['std']:.4f}")
-        else:
-            print(f"{key}: No data or invalid feature array.")
-
 def summarize_array(arr: np.ndarray) -> dict:
     """
     Takes a NumPy array and returns a dictionary of summary stats.
@@ -46,45 +28,39 @@ def summarize_array(arr: np.ndarray) -> dict:
 
 def process_audio_file(file_name, y, sr, password_gen):
     """
-    Handles password generation, encryption, and database storage for an audio file.
-    Also collects summarized data for JSON output.
+    Extracts features, generates hash & password, stores summarized features + hash + password in JSON.
     """
     try:
-        # 1) Extract features (full arrays)
+        # 1) Extract full features
         features = extract_features(y, sr)
         if not features:
             print(f"Failed to extract features for {file_name}.")
             return
 
-        # 2) Print feature summary (existing logic)
-        print_feature_summary(features)
-
-        # 3) Generate hash
+        # 2) Generate hash
         audio_hash = create_hash(features)
-        print(f"\nGenerated Hash: {audio_hash}\n")
 
-        # 4) Derive key from hash
+        # 3) Derive key
         key = derive_key_from_hash(audio_hash)
 
-        # 5) Check if password already exists in database
+        # 4) Check if there's an existing password in DB
         encrypted_pw = get_encrypted_password(audio_hash)
         if encrypted_pw:
-            # Retrieve and decrypt stored password
+            # Retrieve stored password
             password = decrypt_password(encrypted_pw, key)
             print(f"Retrieved Stored Password: {password}")
         else:
             # Generate new password
             password = password_gen.generate_password(features)
             if password:
-                print(f"Generated Thematic Password (new): {password}")
                 encrypted_pw = encrypt_password(password, key)
                 store_encrypted_password(audio_hash, encrypted_pw)
-                print("Password encrypted and stored in database.")
+                print(f"Generated Thematic Password (new): {password}")
             else:
                 print("Failed to generate password.")
                 password = None
 
-        # NEW: Summarize each feature array instead of storing the entire array
+        # 5) Summarize each feature array
         summarized_features = {}
         for k, v in features.items():
             if isinstance(v, np.ndarray) and v.size > 0:
@@ -92,16 +68,13 @@ def process_audio_file(file_name, y, sr, password_gen):
             else:
                 summarized_features[k] = None
 
-        # Build a record to store in our global list
+        # 6) Build a record with only the needed info
         audio_entry = {
-            "file_name": file_name,
-            "sample_rate": sr,
-            "features": summarized_features,  # Only summary stats
+            "features": summarized_features,  # Summaries only
             "hash": audio_hash,
-            "password": password  # Optional: store the generated password
+            "password": password  # If you want the model to learn to produce both
         }
 
-        # Append to the global list
         audio_data_list.append(audio_entry)
 
     except Exception as e:
@@ -115,7 +88,7 @@ if __name__ == "__main__":
     initialize_db()
     password_gen = AIPasswordGenerator()
 
-    # Loop over each .mp3 file in one pass
+    # Loop once over each .mp3 file
     for file_name in os.listdir(AUDIO_FOLDER_PATH):
         if not file_name.endswith(".mp3"):
             continue
@@ -124,21 +97,16 @@ if __name__ == "__main__":
         print(f"\nProcessing file: {file_name}")
 
         try:
-            # Load audio file
             y, sr = librosa.load(file_path, sr=None)
-            print(f"Loaded: {len(y)} samples, Sample Rate: {sr}")
-
-            # Process the audio file (extract features, generate password, etc.)
             process_audio_file(file_name, y, sr, password_gen)
-
         except Exception as e:
-            print(f"Failed to process the file: {e}")
+            print(f"Failed to process {file_name}: {e}")
 
         print("-" * 50)
 
     print("Processing completed.")
 
-    # Write the entire list to JSON (only summary stats)
+    # Write the final dataset to JSON
     if audio_data_list:
         with open(OUTPUT_JSON_FILE, "w") as f:
             json.dump(audio_data_list, f, indent=4)
