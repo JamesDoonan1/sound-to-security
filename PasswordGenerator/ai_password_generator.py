@@ -1,9 +1,8 @@
 import os
 import numpy as np
-import librosa
 from dotenv import load_dotenv
 from openai import OpenAI
-from hash_password_generator import extract_features  # Import feature extraction function
+from audio_feature_extraction import extract_features  # Just in case it's needed internally
 
 # Load API key from environment variables
 load_dotenv()
@@ -17,8 +16,8 @@ class AIPasswordGenerator:
     def _format_features_for_prompt(self, features):
         """
         Format audio features into a thematic prompt for the AI without referencing the hash.
-        This function interprets the audio features in a musical/sonic context and gives the AI guidance
-        on how to reflect these characteristics in the password.
+        Interprets the audio features in a musical/sonic context and guides
+        how to reflect these characteristics in the password.
         """
         mean_mfcc = np.mean(features["MFCCs"])
         mean_spectral_centroid = np.mean(features["Spectral Centroid"])
@@ -76,7 +75,6 @@ class AIPasswordGenerator:
             """
 
             completion = client.chat.completions.create(
-                model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}
@@ -92,44 +90,3 @@ class AIPasswordGenerator:
         except Exception as e:
             print(f"Error generating password: {e}")
             return None
-
-
-if __name__ == "__main__":
-    # Path to audio files
-    AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
-
-    if not os.path.exists(AUDIO_FOLDER_PATH):
-        print(f"The folder {AUDIO_FOLDER_PATH} does not exist.")
-        exit()
-
-    password_gen = AIPasswordGenerator()
-
-    # Process each audio file in the folder
-    for file_name in os.listdir(AUDIO_FOLDER_PATH):
-        if not file_name.endswith(".mp3"):
-            continue
-
-        file_path = os.path.join(AUDIO_FOLDER_PATH, file_name)
-        print(f"\nProcessing file: {file_name}")
-
-        try:
-            # Load the audio file
-            y, sr = librosa.load(file_path, sr=None)
-
-            # Extract audio features
-            features = extract_features(y, sr)
-
-            # Generate password based on extracted features
-            password = password_gen.generate_password(features)
-
-            if password:
-                print(f"Generated Password: {password}")
-            else:
-                print("Failed to generate password.")
-
-        except Exception as e:
-            print(f"Error processing file {file_name}: {e}")
-
-        print("-" * 50)
-
-    print("Processing completed.")
