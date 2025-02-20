@@ -25,13 +25,10 @@ def home():
 
 @passwords_routes.route("/api/generate-password", methods=["POST"])
 def generate_password():
-    """
-    Endpoint to accept audio data, extract features, and generate a password.
-    """
+    """Endpoint to generate a password and compare it with traditional passwords."""
     if "audio" not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
 
-    # Save the audio file
     audio_file = request.files["audio"]
     filename = secure_filename(audio_file.filename)
     audio_path = f"{TEMP_DIR}/{filename}"
@@ -40,9 +37,10 @@ def generate_password():
     logging.info("Processing audio file for password generation...")
 
     try:
-        password = process_audio_and_generate_password(audio_path)
-        logging.info(f"✅ Password successfully generated: {password}")
-        return jsonify({"password": password}), 200
+        result = process_audio_and_generate_password(audio_path)
+        logging.info(f"✅ Password successfully generated: {result['ai_password']}")
+
+        return jsonify(result), 200
     except Exception as e:
         logging.error(f"❌ Error generating password: {e}")
         return jsonify({"error": str(e)}), 500

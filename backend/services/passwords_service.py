@@ -3,6 +3,10 @@ import numpy as np
 import librosa
 from vocal_passwords.feature_extraction import extract_audio_features
 from models.claude_password_generator import generate_password_with_claude
+from backend.utils.password_comparator import compare_passwords
+from backend.utils.password_comparator import calculate_entropy, brute_force_complexity
+import string
+import random
 
 # 📌 Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
@@ -11,14 +15,32 @@ ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-s
 # ✅ Correct file paths for passphrase and voiceprint
 PASSPHRASE_FILE = os.path.join(ROOT_DIR, "stored_passphrase.txt")
 VOICEPRINT_FILE = os.path.join(ROOT_DIR, "stored_voiceprint.npy")
+### ✅ PASSWORD GENERATION FUNCTION
+
+def generate_traditional_password(length=5):
+    """Generate a traditional password with a given length."""
+    characters = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(random.choice(characters) for i in range(length))
+    return password
 
 ### ✅ PASSWORD GENERATION FUNCTION
 def process_audio_and_generate_password(audio_path):
-    """Process an audio file and generate a secure password."""
+    """Process an audio file and generate a secure password, then compare it with traditional passwords."""
     audio, sr = librosa.load(audio_path, sr=22050)
     features = extract_audio_features(audio, sr)
-    password = generate_password_with_claude(features)
-    return password
+    ai_password = generate_password_with_claude(features) or generate_traditional_password()
+
+    comparison_results = [{"Type": "AI-Generated", "Password": ai_password, "Entropy": calculate_entropy(ai_password), "Brute-Force Time (s)": brute_force_complexity(ai_password)}]
+
+    traditional_passwords = [generate_traditional_password() for _ in range(10)]
+
+    for pwd in traditional_passwords:
+        comparison_results.append({"Type": "Traditional", "Password": pwd, "Entropy": calculate_entropy(pwd), "Brute-Force Time (s)": brute_force_complexity(pwd)})
+
+    return {"ai_password": ai_password, "comparison": comparison_results}
+
+    
+
 
 ### ✅ PASS-PHRASE FUNCTIONS
 def extract_passphrase():
