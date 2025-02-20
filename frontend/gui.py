@@ -66,6 +66,9 @@ def on_generate():
 
         print(f"Recognized Passphrase: {passphrase}")
 
+        # ✅ Save passphrase to test_results
+        test_results["passphrase"] = passphrase
+
         print("Step 4: Saving voiceprint & passphrase...")
         save_voiceprint(features)  
         save_passphrase(passphrase)
@@ -106,7 +109,7 @@ def on_generate():
 
 ### ✅ AUTOMATED SECURITY TESTS
 def run_security_tests():
-    """Automatically runs Claude, GPT, and brute-force security tests after password generation."""
+    """Automatically runs all security tests after password generation."""
     global generated_password, test_results
 
     if not generated_password:
@@ -116,73 +119,110 @@ def run_security_tests():
     test_results = {}
 
     print("🔍 Running security tests...")
-    result_label.config(text="🔍 Running security tests... Please wait.")
 
     # ✅ Claude AI Password Guessing Test
     try:
-        print("🤖 Testing with Claude...")
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "claude"})
         response.raise_for_status()
-        test_results["Claude"] = response.json()
-    except requests.RequestException as e:
-        print(f"❌ Error testing with Claude: {e}")
-        test_results["Claude"] = {"cracked": "Error", "time": "N/A"}
+        response_data = response.json()
+        test_results["Claude"] = {
+            "cracked": response_data.get("cracked", "N/A"),
+            "time": response_data.get("time", "N/A"),
+            "response": response_data.get("message", "No response from Claude."),
+            "attempts": ", ".join(response_data.get("attempts", []))  # ✅ Log Claude's password guesses
+        }
+    except requests.RequestException:
+        test_results["Claude"] = {"cracked": "Error", "time": "N/A", "response": "Error retrieving response.", "attempts": "N/A"}
 
     time.sleep(1)
 
     # ✅ GPT-4 Password Guessing Test
     try:
-        print("🤖 Testing with GPT-4...")
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "gpt"})
         response.raise_for_status()
-        test_results["GPT"] = response.json()
-    except requests.RequestException as e:
-        print(f"❌ Error testing with GPT: {e}")
-        test_results["GPT"] = {"cracked": "Error", "time": "N/A"}
+        response_data = response.json()
+        test_results["GPT"] = {
+            "cracked": response_data.get("cracked", "N/A"),
+            "time": response_data.get("time", "N/A"),
+            "attempts": response_data.get("attempted_passwords", [])  # ✅ Capture attempted passwords
+        }
+    except requests.RequestException:
+        test_results["GPT"] = {"cracked": "Error", "time": "N/A", "attempts": "Error retrieving attempts."}
 
     time.sleep(1)
 
     # ✅ Brute-Force Test
     try:
-        print("🛠 Running brute-force attack...")
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "brute"})
         response.raise_for_status()
         test_results["Brute Force"] = response.json()
-    except requests.RequestException as e:
-        print(f"❌ Error testing with brute-force: {e}")
+    except requests.RequestException:
         test_results["Brute Force"] = {"cracked": "Error", "time": "N/A"}
 
     # ✅ Log results
     log_test_results()
 
-    # ✅ Enable "Compare AI Results" button
+    # ✅ Enable "Compare AI Results" button after tests complete
     compare_button.config(state=tk.NORMAL)
 
-    print("✅ Security tests completed!")
-    result_label.config(text="✅ Security tests completed! Click 'Compare AI Results' to view.")
-
 ### ✅ LOGGING FUNCTION
+
+
 def log_test_results():
-    """Logs AI password and security test results to CSV file."""
-    log_file = "backend/temp/password_log.csv"
+    """Logs AI password, passphrase, and security test results to CSV file with better formatting."""
+    log_file = "backend/temp/password_result_log.csv"
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     
     file_exists = os.path.isfile(log_file)
 
     with open(log_file, mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)  # ✅ Prevents CSV formatting issues
 
+        # ✅ Clear and structured column headers
         if not file_exists:
-            writer.writerow(["AI_Password", "Claude_Cracked", "Claude_Time", "GPT_Cracked", "GPT_Time", "Brute_Cracked", "Brute_Time"])
+            writer.writerow([
+                "AI_Password", "Passphrase",
+                "Claude_Cracked", "Claude_Time", "Claude_Response",
+                "Claude_Password_Attempts",
+                "GPT_Cracked", "GPT_Time", "GPT_Attempted_Passwords",
+                "Brute_Cracked", "Brute_Time"
+            ])
 
+        # ✅ Ensure clean data (replace None with "N/A")
+        ai_password = generated_password if generated_password else "N/A"
+        passphrase = test_results.get("passphrase", "N/A")  # ✅ Make sure passphrase is stored
+
+        claude_cracked = test_results["Claude"].get("cracked", "N/A")
+        claude_time = test_results["Claude"].get("time", "N/A")
+        claude_response = test_results["Claude"].get("response", "N/A")
+        claude_attempts = test_results["Claude"].get("attempts", [])
+
+        gpt_cracked = test_results["GPT"].get("cracked", "N/A")
+        gpt_time = test_results["GPT"].get("time", "N/A")
+        gpt_attempts = test_results["GPT"].get("attempts", [])
+
+        brute_cracked = test_results["Brute Force"].get("cracked", "N/A")
+        brute_time = test_results["Brute Force"].get("time", "N/A")
+
+        # ✅ Fix: Ensure Claude’s attempts are logged correctly
+        if isinstance(claude_attempts, list) and claude_attempts:
+            claude_attempts_str = "\n".join(claude_attempts)  # ✅ Multi-line only if it's a list
+        else:
+            claude_attempts_str = "N/A"
+
+        # ✅ Fix: Ensure GPT’s attempted passwords are formatted correctly
+        if isinstance(gpt_attempts, list) and gpt_attempts:
+            gpt_attempts_str = "\n".join(gpt_attempts)  # ✅ Multi-line for better readability
+        else:
+            gpt_attempts_str = "N/A"
+
+        # ✅ Write the structured data row
         writer.writerow([
-            generated_password,
-            test_results["Claude"].get("cracked", "N/A"),
-            test_results["Claude"].get("time", "N/A"),
-            test_results["GPT"].get("cracked", "N/A"),
-            test_results["GPT"].get("time", "N/A"),
-            test_results["Brute Force"].get("cracked", "N/A"),
-            test_results["Brute Force"].get("time", "N/A"),
+            ai_password, passphrase,
+            claude_cracked, claude_time, claude_response,
+            claude_attempts_str,  # ✅ Properly formatted password attempts
+            gpt_cracked, gpt_time, gpt_attempts_str,
+            brute_cracked, brute_time
         ])
 
     print(f"✅ Security test results saved to {log_file}")
@@ -240,7 +280,7 @@ header_label.pack(pady=20)
 generate_button = tk.Button(app, text="Generate Password", font=("Helvetica", 14), bg="#61dafb", command=on_generate)
 generate_button.pack(pady=10)
 
-compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", command=log_test_results, state=tk.DISABLED)
+compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", state=tk.DISABLED)
 compare_button.pack(pady=5)
 
 login_button = tk.Button(app, text="Login", font=("Helvetica", 14), bg="lightblue", command=on_login)
