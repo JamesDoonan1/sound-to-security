@@ -34,6 +34,17 @@ def hash_password(password):
     """Hashes a password using SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
 
+def save_hashed_password(password):
+    """Hashes the password using SHA-256 and saves it correctly."""
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
+    # ✅ Overwrite file with only the hash
+    with open("hashed_password.txt", "w") as f:
+        f.write(hashed_password + "\n")  # ✅ Ensure single hash with newline
+
+    return hashed_password
+
+
 
 def on_generate():
     """Handles the process of generating a password from voice input."""
@@ -60,30 +71,19 @@ def on_generate():
         save_voiceprint(features)  
         save_passphrase(passphrase)
 
-        # ✅ Debugging: Confirm files are saved correctly
-        if os.path.exists("stored_passphrase.txt"):
-            print("✅ Passphrase saved successfully.")
-        else:
-            print("❌ ERROR: Passphrase not saved!")
-
-        if os.path.exists("stored_voiceprint.npy"):
-            print("✅ Voiceprint saved successfully.")
-        else:
-            print("❌ ERROR: Voiceprint not saved!")
-        
         print("Step 5: Generating AI password with Claude...")
         generated_password = generate_password_with_claude(features)
 
         if generated_password and "Error" not in generated_password:
             print(f"✅ Generated Password: {generated_password}")
 
-             # Hash the password before saving it
-            hashed_password = hash_password(generated_password)
-            print(f"🔐 Hashed Password: {hashed_password}")
+            hashed_password = save_hashed_password(generated_password)
+            print(f"✅ Hashed Password: {hashed_password}")
 
-            # Save the hashed password to a file so Hashcat can attempt to crack it
+
+            # Save the hashed password to a file in correct format
             with open("hashed_password.txt", "w") as f:
-                f.write(hashed_password)
+                f.write(f"{hashed_password}\n")
 
             save_password(generated_password)  
             result_label.config(text=f"🔐 Generated Password:\n{generated_password}")
@@ -230,6 +230,7 @@ def on_login():
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
 
+
 def test_with_hashcat():
     """Runs Hashcat to attempt cracking the hashed password."""
     global generated_password, test_results
@@ -242,32 +243,31 @@ def test_with_hashcat():
     result_label.config(text="Running Hashcat attack... Please wait.")
 
     try:
-        # ✅ Full path to Hashcat
+        # ✅ Full path to Hashcat (update this path if necessary)
         hashcat_path = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
-        
-        # ✅ Check if hashed_password.txt exists
+
+        # ✅ Validate hashed_password.txt exists
         if not os.path.exists("hashed_password.txt"):
             print("❌ Error: hashed_password.txt not found!")
             result_label.config(text="❌ hashed_password.txt not found!")
             return
-        
-        # ✅ Check if rockyou.txt exists
+
+        # ✅ Validate rockyou.txt exists
         wordlist_path = "rockyou.txt"
         if not os.path.exists(wordlist_path):
             print("❌ Error: rockyou.txt not found! Download and place it in the same folder.")
             result_label.config(text="❌ rockyou.txt not found! Download and place it in the same folder.")
             return
 
-        # ✅ Define SHA-256 Hash Mode (1400 for SHA-256)
-        hash_mode = "1400"
-
+        # ✅ Exact Hashcat Command (Matches Your Working CLI Command)
         command = [
-            hashcat_path,  # ✅ Full Hashcat Path
-            "-m", hash_mode,  # ✅ SHA-256 Hash Mode
+            hashcat_path,  # ✅ Hashcat Executable Path
+            "-D", "1",  # ✅ Force CPU execution
+            "-m", "1400",  # ✅ SHA-256 Hash Mode
             "-a", "0",  # ✅ Dictionary Attack Mode
             "hashed_password.txt",  # ✅ Input Hash File
             wordlist_path,  # ✅ Wordlist File
-            "--force"
+            "--force"  # ✅ Force Run (since OpenCL is disabled)
         ]
 
         # ✅ Run Hashcat and Capture Output
@@ -284,6 +284,12 @@ def test_with_hashcat():
         if "Recovered" in hashcat_output or "Cracked" in hashcat_output:
             cracked = True
             result_text = "✅ Hashcat cracked the password!"
+        elif "No hashes loaded" in hashcat_output:
+            cracked = False
+            result_text = "❌ Hashcat did not recognize the hash format!"
+        elif "Token length exception" in hashcat_output:
+            cracked = False
+            result_text = "❌ Hash format incorrect! Ensure it's a single SHA-256 hash."
         else:
             cracked = False
             result_text = "❌ No password cracked!"
