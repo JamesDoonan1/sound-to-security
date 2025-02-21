@@ -8,7 +8,7 @@ import subprocess
 from tkinter import messagebox, simpledialog
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
-from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice
+from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice, load_passphrase
 from models.claude_password_generator import generate_password_with_claude
 
 # Paths for stored data
@@ -169,64 +169,114 @@ def run_security_tests():
 
 
 def log_test_results():
-    """Logs AI password, passphrase, and security test results to CSV file with better formatting."""
+    """
+    Logs AI password, passphrase, and security test results to CSV file.
+    Includes improved error handling, data validation, and cleaner formatting.
+    """
     log_file = "backend/temp/password_result_log.csv"
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    passphrase = test_results.get("passphrase", "N/A")
+    test_results["passphrase"] = passphrase if passphrase not in ["UNKNOWN_PHRASE", "ERROR"] else load_passphrase()
+
+
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        
+        # Define column headers and their corresponding data mappings
+        columns = {
+            "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
+            "AI_Password": lambda: generated_password or "N/A",
+            "Passphrase": lambda: test_results.get("passphrase", "N/A"),
+            "Claude_Cracked": lambda: test_results.get("Claude", {}).get("cracked", "N/A"),
+            "Claude_Time": lambda: test_results.get("Claude", {}).get("time", "N/A"),
+            "Claude_Response": lambda: test_results.get("Claude", {}).get("response", "N/A"),
+            "Claude_Attempts": lambda: format_attempts(test_results.get("Claude", {}).get("attempts", [])),
+            "GPT_Cracked": lambda: test_results.get("GPT", {}).get("cracked", "N/A"),
+            "GPT_Time": lambda: test_results.get("GPT", {}).get("time", "N/A"),
+            "GPT_Attempts": lambda: format_attempts(test_results.get("GPT", {}).get("attempts", [])),  # ✅ Ensuring GPT password attempts are logged correctly
+            "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
+            "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A")
+        }
+
+        # Check if the file exists to determine whether to write headers
+        file_exists = os.path.isfile(log_file)
+
+        with open(log_file, mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
+
+            # Write headers if file is newly created
+            if not file_exists:
+                writer.writerow(columns.keys())
+
+            # Write the row with formatted data
+            writer.writerow([func() for func in columns.values()])
+
+        print(f"✅ Security test results saved to {log_file}")
+
+    except Exception as e:
+        print(f"❌ Error logging test results: {e}")
+
+def flatten_columns(columns, prefix=""):
+    """Flattens nested column structure into a list of header names."""
+    headers = []
+    for key, value in columns.items():
+        if isinstance(value, dict):
+            headers.extend(flatten_columns(value, f"{key}_"))
+        else:
+            headers.append(f"{prefix}{key}")
+    return headers
+
+def format_attempts(attempts):
+    """Formats password attempts into a clean string representation."""
+    if not attempts:
+        return "N/A"
     
+    if isinstance(attempts, str):
+        return attempts.replace("\n", "; ")
+    
+    if isinstance(attempts, list):
+        return "; ".join(str(attempt) for attempt in attempts)
+    
+    return str(attempts)
+
+def generate_row_data(columns):
+    """Generates a single row of data based on the column structure."""
+    row_data = []
+    
+    def process_value(value):
+        if isinstance(value, dict):
+            return [process_value(v) for v in value.values()]
+        return [value()]
+    
+    for value in columns.values():
+        row_data.extend(process_value(value))
+    
+    return row_data
+
+def write_to_csv(log_file, headers, row_data):
+    """Writes the data to CSV file with proper encoding and error handling."""
     file_exists = os.path.isfile(log_file)
-
+    
     with open(log_file, mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)  # ✅ Prevents CSV formatting issues
-
-        # ✅ Clear and structured column headers
+        writer = csv.writer(file, quoting=csv.QUOTE_ALL)  # Quote all fields for consistency
+        
+        # Write headers if file is new
         if not file_exists:
-            writer.writerow([
-                "AI_Password", "Passphrase",
-                "Claude_Cracked", "Claude_Time", "Claude_Response",
-                "Claude_Password_Attempts",
-                "GPT_Cracked", "GPT_Time", "GPT_Attempted_Passwords",
-                "Brute_Cracked", "Brute_Time"
-            ])
+            writer.writerow(headers)
+        
+        # Write data row
+        writer.writerow(row_data)
 
-        # ✅ Ensure clean data (replace None with "N/A")
-        ai_password = generated_password if generated_password else "N/A"
-        passphrase = test_results.get("passphrase", "N/A")  # ✅ Make sure passphrase is stored
-
-        claude_cracked = test_results["Claude"].get("cracked", "N/A")
-        claude_time = test_results["Claude"].get("time", "N/A")
-        claude_response = test_results["Claude"].get("response", "N/A")
-        claude_attempts = test_results["Claude"].get("attempts", [])
-
-        gpt_cracked = test_results["GPT"].get("cracked", "N/A")
-        gpt_time = test_results["GPT"].get("time", "N/A")
-        gpt_attempts = test_results["GPT"].get("attempts", [])
-
-        brute_cracked = test_results["Brute Force"].get("cracked", "N/A")
-        brute_time = test_results["Brute Force"].get("time", "N/A")
-
-        # ✅ Fix: Ensure Claude’s attempts are logged correctly
-        if isinstance(claude_attempts, list) and claude_attempts:
-            claude_attempts_str = "\n".join(claude_attempts)  # ✅ Multi-line only if it's a list
-        else:
-            claude_attempts_str = "N/A"
-
-        # ✅ Fix: Ensure GPT’s attempted passwords are formatted correctly
-        if isinstance(gpt_attempts, list) and gpt_attempts:
-            gpt_attempts_str = "\n".join(gpt_attempts)  # ✅ Multi-line for better readability
-        else:
-            gpt_attempts_str = "N/A"
-
-        # ✅ Write the structured data row
-        writer.writerow([
-            ai_password, passphrase,
-            claude_cracked, claude_time, claude_response,
-            claude_attempts_str,  # ✅ Properly formatted password attempts
-            gpt_cracked, gpt_time, gpt_attempts_str,
-            brute_cracked, brute_time
-        ])
-
-    print(f"✅ Security test results saved to {log_file}")
-
+def log_error(error):
+    """Logs errors to a separate error log file."""
+    error_log = "backend/temp/error_log.txt"
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    try:
+        with open(error_log, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] Error in logging test results: {str(error)}\n")
+    except Exception as e:
+        print(f"❌ Failed to log error: {str(e)}")
 def on_login():
     """Handles voice-based login authentication."""
     print("🔐 Step 1: Recording login voice...")
