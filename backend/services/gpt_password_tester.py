@@ -66,6 +66,13 @@ Rules:
             "attempts": guesses,
             "message": "Password cracked!" if password_cracked else "Failed to crack password"
         }
+
+
+        
+        # ✅ Debugging Outputs
+        print(f"🟢 DEBUG: GPT Generated Passwords: {json.dumps(guesses, indent=2)}")
+        print(f"🟢 DEBUG: GPT Cracked Password? {password_cracked}")
+        print(f"🟢 DEBUG: GPT Processing Time: {elapsed_time:.2f}s")
         
         print(f"🔍 GPT Test Results: {json.dumps(result, indent=2)}")
         return result

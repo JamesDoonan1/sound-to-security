@@ -137,20 +137,36 @@ def run_security_tests():
 
     time.sleep(1)
 
-    # ✅ GPT-4 Password Guessing Test
+    # ✅ GPT-4 Password Guessing Test 
     try:
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "gpt"})
         response.raise_for_status()
         response_data = response.json()
+
+        # ✅ Debugging API Response
+        print(f"🟢 DEBUG: GPT Full API Response: {response_data}")
+
+        # ✅ Explicitly store and format attempted passwords
+        gpt_attempts = response_data.get("attempts", [])
+        if not gpt_attempts or not isinstance(gpt_attempts, list):
+            gpt_attempts = ["No attempts generated"]
+
         test_results["GPT"] = {
             "cracked": response_data.get("cracked", "N/A"),
             "time": response_data.get("time", "N/A"),
-            "attempts": response_data.get("attempted_passwords", [])  # ✅ Capture attempted passwords
+            "attempts": gpt_attempts  # ✅ Ensure it is always a list
         }
-    except requests.RequestException:
-        test_results["GPT"] = {"cracked": "Error", "time": "N/A", "attempts": "Error retrieving attempts."}
+
+        # ✅ Additional Debugging Before Logging
+        print(f"🟢 DEBUG: GPT Stored Attempts in test_results: {test_results['GPT']['attempts']}")
+
+    except requests.RequestException as e:
+        print(f"❌ GPT Testing Error: {e}")
+        test_results["GPT"] = {"cracked": "Error", "time": "N/A", "attempts": ["Error retrieving attempts."]}
 
     time.sleep(1)
+
+
 
     # ✅ Brute-Force Test
     try:
@@ -179,7 +195,25 @@ def log_test_results():
     if test_results.get("passphrase") in ["UNKNOWN_PHRASE", "ERROR", None, "N/A"]:
          test_results["passphrase"] = load_passphrase()
 
-  
+    # Ensure GPT test results are stored, but only if they are completely missing
+    if "GPT" not in test_results:
+        test_results["GPT"] = {}
+
+    # Ensure each GPT field is properly initialized without affecting other test results
+    test_results["GPT"].setdefault("cracked", "N/A")
+    test_results["GPT"].setdefault("time", "N/A")
+    test_results["GPT"].setdefault("attempts", [])
+
+    # ✅ Retrieve and format GPT attempts correctly
+    gpt_attempts_list = test_results.get("GPT", {}).get("attempts", [])
+    if not gpt_attempts_list or not isinstance(gpt_attempts_list, list):
+        gpt_attempts_list = ["No attempts generated"]
+
+    gpt_attempts_str = ", ".join(gpt_attempts_list)  # ✅ Convert list to comma-separated string
+
+    # ✅ Debugging before writing to CSV
+    print(f"🟢 DEBUG: GPT Attempts to be logged: {gpt_attempts_str}")
+
 
     try:
         # Ensure directory exists
@@ -197,9 +231,9 @@ def log_test_results():
             "Claude_Time": lambda: test_results.get("Claude", {}).get("time", "N/A"),
             "Claude_Response": lambda: test_results.get("Claude", {}).get("response", "N/A"),
             "Claude_Attempts": lambda: format_attempts(test_results.get("Claude", {}).get("attempts", [])),
-            "GPT_Cracked": lambda: test_results.get("GPT", {}).get("cracked", "N/A"),
-            "GPT_Time": lambda: test_results.get("GPT", {}).get("time", "N/A"),
-            "GPT_Attempts": lambda: format_attempts(test_results.get("GPT", {}).get("attempts", [])),  # ✅ Ensuring GPT password attempts are logged correctly
+            "GPT_Cracked": lambda: str(test_results.get("GPT", {}).get("cracked", "N/A")),
+            "GPT_Time": lambda: str(test_results.get("GPT", {}).get("time", "N/A")),
+            "GPT_Attempts": lambda: gpt_attempts_str,  # ✅ Fixing GPT attempted passwords
             "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
             "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A")
         }
