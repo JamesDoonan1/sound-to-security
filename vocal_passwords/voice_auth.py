@@ -59,7 +59,7 @@ def load_passphrase():
     if os.path.exists(PASSPHRASE_FILE):
         with open(PASSPHRASE_FILE, "r") as f:
             return f.read().strip()
-    return None
+    return "NO_PASSPHRASE"  # 🔥 Instead of returning None, return a default value
 
 def verify_passphrase(spoken_passphrase):
     """Compares the spoken phrase to the stored passphrase."""

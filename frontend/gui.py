@@ -72,6 +72,7 @@ def on_generate():
         print("Step 4: Saving voiceprint & passphrase...")
         save_voiceprint(features)  
         save_passphrase(passphrase)
+        verify_passphrase(passphrase)
 
         print("Step 5: Generating AI password with Claude...")
         response = requests.post("http://127.0.0.1:5000/api/generate-password", files={"audio": open("vocal_input.wav", "rb")})
@@ -174,14 +175,19 @@ def log_test_results():
     Includes improved error handling, data validation, and cleaner formatting.
     """
     log_file = "backend/temp/password_result_log.csv"
-    passphrase = test_results.get("passphrase", "N/A")
-    test_results["passphrase"] = passphrase if passphrase not in ["UNKNOWN_PHRASE", "ERROR"] else load_passphrase()
+    ##passphrase = test_results.get("passphrase", "N/A")
+    if test_results.get("passphrase") in ["UNKNOWN_PHRASE", "ERROR", None, "N/A"]:
+         test_results["passphrase"] = load_passphrase()
 
+  
 
     try:
         # Ensure directory exists
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         
+        print(f"DEBUG: Final passphrase being logged: {test_results['passphrase']}")
+
+
         # Define column headers and their corresponding data mappings
         columns = {
             "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
