@@ -4,12 +4,12 @@ import time
 import tkinter as tk
 import requests
 import hashlib
-import subprocess
+import pandas as pd
 from tkinter import messagebox, simpledialog
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
 from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice, load_passphrase
-from models.claude_password_generator import generate_password_with_claude
+
 
 # Paths for stored data
 VOICEPRINT_FILE = "stored_voiceprint.npy"
@@ -46,8 +46,9 @@ def save_hashed_password(password):
     return hashed_password
 
 ### ✅ PASSWORD GENERATION HANDLER
+
 def on_generate():
-    """Handles the process of generating a password from voice input and comparing AI vs. Traditional passwords."""
+    """Handles AI password generation and comparison with traditional passwords."""
     global generated_password  
 
     print("Step 1: Starting audio capture...")
@@ -65,8 +66,6 @@ def on_generate():
             return
 
         print(f"Recognized Passphrase: {passphrase}")
-
-        # ✅ Save passphrase to test_results
         test_results["passphrase"] = passphrase
 
         print("Step 4: Saving voiceprint & passphrase...")
@@ -80,25 +79,32 @@ def on_generate():
         if response.status_code == 200:
             data = response.json()
             
-            # Extract AI and Traditional passwords
+            # ✅ Extract AI and Traditional passwords from response
             generated_password = data.get("ai_password", "N/A")
-            traditional_password = next((res["Password"] for res in data.get("comparison", []) if res["Type"] == "Traditional"), "N/A")
+            traditional_passwords = data.get("traditional_passwords", [])
 
-            print(f"✅ Generated Password: {generated_password}")
+            print(f"✅ Generated AI Password: {generated_password}")
+            print(f"✅ Traditional Passwords: {', '.join(traditional_passwords)}")
+            # ✅ Ensure Traditional Passwords are stored in test_results
+            test_results["Traditional_Passwords"] = traditional_passwords if traditional_passwords else ["N/A"]
 
-            # Hash and store the generated password
+            # ✅ Debugging - Print Traditional Passwords to ensure they exist
+            print(f"🟢 DEBUG: Traditional Passwords stored in test_results: {test_results['Traditional_Passwords']}")
+
+            print(f"🟢 DEBUG: Full API Response: {data}")  # ✅ Add this inside on_generate()
+
+            # ✅ Hash and store AI-generated password
             hashed_password = save_hashed_password(generated_password)
-            print(f"✅ Hashed Password: {hashed_password}")
+            print(f"✅ Hashed AI Password: {hashed_password}")
 
-            # Update UI
-            result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Password: {traditional_password}\n\n🔍 Running security tests...")
+            # ✅ Update UI
+            result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Passwords: {', '.join(traditional_passwords)}\n\n🔍 Running security tests...")
 
-            # Ensure button exist before disabling them
+            # ✅ Ensure button exists before disabling
             compare_button.config(state=tk.DISABLED)
 
-            # Run tests automatically
+            # ✅ Run security tests automatically
             run_security_tests()
-
 
         else:
             print("❌ Error: Failed to generate password.")
@@ -117,7 +123,9 @@ def run_security_tests():
         messagebox.showerror("Error", "No password available to test.")
         return
 
-    test_results = {}
+    if "Traditional_Passwords" not in test_results:
+         test_results["Traditional_Passwords"] = []
+
 
     print("🔍 Running security tests...")
 
@@ -186,43 +194,57 @@ def run_security_tests():
 
 
 def log_test_results():
-    """
-    Logs AI password, passphrase, and security test results to CSV file.
-    Includes improved error handling, data validation, and cleaner formatting.
-    """
+    """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     log_file = "backend/temp/password_result_log.csv"
-    ##passphrase = test_results.get("passphrase", "N/A")
+
     if test_results.get("passphrase") in ["UNKNOWN_PHRASE", "ERROR", None, "N/A"]:
-         test_results["passphrase"] = load_passphrase()
+        test_results["passphrase"] = load_passphrase()
 
-    # Ensure GPT test results are stored, but only if they are completely missing
-    if "GPT" not in test_results:
-        test_results["GPT"] = {}
+    # ✅ Ensure GPT test results are stored properly
+    test_results["GPT"] = test_results.get("GPT", {})
 
-    # Ensure each GPT field is properly initialized without affecting other test results
-    test_results["GPT"].setdefault("cracked", "N/A")
-    test_results["GPT"].setdefault("time", "N/A")
-    test_results["GPT"].setdefault("attempts", [])
+    # ✅ Retrieve and format Traditional Passwords correctly
+    traditional_passwords_list = test_results.get("Traditional_Passwords", [])
 
-    # ✅ Retrieve and format GPT attempts correctly
-    gpt_attempts_list = test_results.get("GPT", {}).get("attempts", [])
+    # If missing, extract from 'comparison'
+    if not traditional_passwords_list:
+        traditional_passwords_list = [
+            item["Password"] for item in test_results.get("comparison", []) if item["Type"] == "Traditional"
+        ]
+
+    # ✅ Ensure we extract traditional passwords if they exist in 'comparison'
+    if not traditional_passwords_list:
+        traditional_passwords_list = [
+            item["Password"] for item in test_results.get("comparison", []) if item["Type"] == "Traditional"
+        ]
+
+    # Convert to string format
+    if isinstance(traditional_passwords_list, list) and traditional_passwords_list:
+        traditional_passwords_str = "; ".join(traditional_passwords_list)
+    else:
+        traditional_passwords_str = "N/A"
+
+    # Debugging output
+    print(f"🟢 DEBUG: Extracted Traditional Passwords → {traditional_passwords_list}")
+    print(f"🟢 DEBUG: Traditional Passwords to be logged → {traditional_passwords_str}")
+    
+    # ✅ Ensure Claude's response is not overwritten
+    if "Claude" not in test_results:
+        test_results["Claude"] = {}
+        
+    gpt_attempts_list = test_results["GPT"].get("attempts", [])
     if not gpt_attempts_list or not isinstance(gpt_attempts_list, list):
         gpt_attempts_list = ["No attempts generated"]
-
-    gpt_attempts_str = ", ".join(gpt_attempts_list)  # ✅ Convert list to comma-separated string
-
-    # ✅ Debugging before writing to CSV
-    print(f"🟢 DEBUG: GPT Attempts to be logged: {gpt_attempts_str}")
-
+    gpt_attempts_str = ", ".join(gpt_attempts_list)
 
     try:
-        # Ensure directory exists
+        # ✅ Ensure directory exists
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
-        
+
         print(f"DEBUG: Final passphrase being logged: {test_results['passphrase']}")
+        # Debugging before writing to CSV
 
-
-        # Define column headers and their corresponding data mappings
+        # ✅ Define column headers and their corresponding data mappings
         columns = {
             "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
             "AI_Password": lambda: generated_password or "N/A",
@@ -231,24 +253,23 @@ def log_test_results():
             "Claude_Time": lambda: test_results.get("Claude", {}).get("time", "N/A"),
             "Claude_Response": lambda: test_results.get("Claude", {}).get("response", "N/A"),
             "Claude_Attempts": lambda: format_attempts(test_results.get("Claude", {}).get("attempts", [])),
-            "GPT_Cracked": lambda: str(test_results.get("GPT", {}).get("cracked", "N/A")),
-            "GPT_Time": lambda: str(test_results.get("GPT", {}).get("time", "N/A")),
-            "GPT_Attempts": lambda: gpt_attempts_str,  # ✅ Fixing GPT attempted passwords
+            "GPT_Cracked": lambda: str(test_results["GPT"].get("cracked", "N/A")),
+            "GPT_Time": lambda: str(test_results["GPT"].get("time", "N/A")),
+            "GPT_Attempts": lambda: gpt_attempts_str,
             "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
-            "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A")
+            "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A"),
+            "Traditional_Passwords": lambda: traditional_passwords_str 
+
         }
 
-        # Check if the file exists to determine whether to write headers
         file_exists = os.path.isfile(log_file)
 
         with open(log_file, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
 
-            # Write headers if file is newly created
             if not file_exists:
                 writer.writerow(columns.keys())
 
-            # Write the row with formatted data
             writer.writerow([func() for func in columns.values()])
 
         print(f"✅ Security test results saved to {log_file}")
@@ -353,6 +374,56 @@ def on_login():
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
 
+
+def compare_ai_results():
+    """Opens a new window to display AI vs Traditional Password Comparison."""
+    log_file = "backend/temp/password_result_log.csv"
+
+    if not os.path.exists(log_file):
+        messagebox.showerror("Error", "No test results available. Run security tests first.")
+        return
+
+    try:
+        # Load CSV file into a DataFrame
+        df = pd.read_csv(log_file)
+
+        if df.empty:
+            messagebox.showerror("Error", "No data found in the log file.")
+            return
+
+        # Get the latest test result (last row)
+        latest_result = df.iloc[-1]
+
+        # ✅ Extract key data
+        ai_password = latest_result["AI_Password"]
+        passphrase = latest_result["Passphrase"]
+        cl_cracked = latest_result["Claude_Cracked"]
+        cl_attempts = latest_result["Claude_Attempts"]
+        gpt_cracked = latest_result["GPT_Cracked"]
+        gpt_attempts = latest_result["GPT_Attempts"]
+        brute_cracked = latest_result["Brute_Cracked"]
+        traditional_passwords = latest_result["Traditional_Passwords"]
+
+        # ✅ Create a new Tkinter window to display results
+        compare_window = tk.Toplevel(app)
+        compare_window.title("AI Password Security Comparison")
+        compare_window.geometry("600x500")
+
+        tk.Label(compare_window, text="🔍 AI Password Security Results", font=("Helvetica", 16, "bold")).pack(pady=10)
+        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🤖 Claude Cracked: {cl_cracked}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🔓 Claude's Attempts: {cl_attempts}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🤖 GPT-4 Cracked: {gpt_cracked}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🔓 GPT-4's Attempts: {gpt_attempts}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🔨 Brute-Force Cracked: {brute_cracked}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🔑 Traditional Passwords: {traditional_passwords}", font=("Helvetica", 12, "bold")).pack()
+
+        tk.Button(compare_window, text="Close", command=compare_window.destroy).pack(pady=10)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load test results: {e}")
+
 ### ✅ UI BUTTON HANDLING
 def disable_buttons():
     """Disables test button during automated testing."""
@@ -370,7 +441,7 @@ header_label.pack(pady=20)
 generate_button = tk.Button(app, text="Generate Password", font=("Helvetica", 14), bg="#61dafb", command=on_generate)
 generate_button.pack(pady=10)
 
-compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", state=tk.DISABLED)
+compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)
 
 login_button = tk.Button(app, text="Login", font=("Helvetica", 14), bg="lightblue", command=on_login)

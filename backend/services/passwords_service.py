@@ -28,16 +28,25 @@ def process_audio_and_generate_password(audio_path):
     """Process an audio file and generate a secure password, then compare it with traditional passwords."""
     audio, sr = librosa.load(audio_path, sr=22050)
     features = extract_audio_features(audio, sr)
+
+    # ✅ Generate AI Password (Claude or Fallback Traditional)
     ai_password = generate_password_with_claude(features) or generate_traditional_password()
 
-    comparison_results = [{"Type": "AI-Generated", "Password": ai_password, "Entropy": calculate_entropy(ai_password), "Brute-Force Time (s)": brute_force_complexity(ai_password)}]
-
+    # ✅ Generate Traditional Passwords (10 variations)
     traditional_passwords = [generate_traditional_password() for _ in range(10)]
+
+    # ✅ Compare Passwords
+    comparison_results = [{"Type": "AI-Generated", "Password": ai_password, "Entropy": calculate_entropy(ai_password), "Brute-Force Time (s)": brute_force_complexity(ai_password)}]
 
     for pwd in traditional_passwords:
         comparison_results.append({"Type": "Traditional", "Password": pwd, "Entropy": calculate_entropy(pwd), "Brute-Force Time (s)": brute_force_complexity(pwd)})
 
-    return {"ai_password": ai_password, "comparison": comparison_results}
+    # ✅ Return Traditional Passwords alongside AI password results
+    return {
+        "ai_password": ai_password,
+        "traditional_passwords": traditional_passwords,
+        "comparison": comparison_results
+    }
 
     
 

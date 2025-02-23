@@ -1,12 +1,4 @@
-import secrets
-import string
 import math
-
-# Function to generate a random traditional password
-def generate_traditional_password(length=12):
-    charset = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(secrets.choice(charset) for _ in range(length))
-
 # Function to calculate entropy of a password
 def calculate_entropy(password):
     charset = len(set(password))  # Unique characters in the password
@@ -21,10 +13,14 @@ def brute_force_complexity(password):
     return estimated_time  # In seconds
 
 # Function to compare AI vs. Traditional passwords
-def compare_passwords(ai_passwords, num_traditional=10):
-    traditional_passwords = [generate_traditional_password() for _ in range(num_traditional)]
-    
+def compare_passwords(ai_password, traditional_passwords):
+    """
+    Compare AI-generated password against a list of pre-generated traditional passwords.
+    Traditional passwords should be provided, not generated here.
+    """
     results = []
+
+    # ✅ Evaluate Traditional Passwords
     for pwd in traditional_passwords:
         results.append({
             "Type": "Traditional",
@@ -33,12 +29,12 @@ def compare_passwords(ai_passwords, num_traditional=10):
             "Brute-Force Time (s)": brute_force_complexity(pwd)
         })
 
-    for pwd in ai_passwords:
-        results.append({
-            "Type": "AI-Generated",
-            "Password": pwd,
-            "Entropy": calculate_entropy(pwd),
-            "Brute-Force Time (s)": brute_force_complexity(pwd)
-        })
+    # ✅ Evaluate AI-Generated Password
+    results.append({
+        "Type": "AI-Generated",
+        "Password": ai_password,
+        "Entropy": calculate_entropy(ai_password),
+        "Brute-Force Time (s)": brute_force_complexity(ai_password)
+    })
 
-    return results
+    return results, traditional_passwords  # ✅ Return both results and the password list
