@@ -7,10 +7,15 @@ from backend.utils.password_comparator import compare_passwords
 from backend.utils.password_comparator import calculate_entropy, brute_force_complexity
 import string
 import random
+import csv
+import time  
+
 
 # 📌 Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-security/`
+ENTROPY_LOG_FILE = os.path.join(os.path.dirname(__file__), "entropy_results_log.csv")
+
 
 # ✅ Correct file paths for passphrase and voiceprint
 PASSPHRASE_FILE = os.path.join(ROOT_DIR, "stored_passphrase.txt")
@@ -29,19 +34,41 @@ def process_audio_and_generate_password(audio_path):
     audio, sr = librosa.load(audio_path, sr=22050)
     features = extract_audio_features(audio, sr)
 
-    # ✅ Generate AI Password (Claude or Fallback Traditional)
+    # ✅ Generate AI Password
     ai_password = generate_password_with_claude(features) or generate_traditional_password()
 
     # ✅ Generate Traditional Passwords (10 variations)
     traditional_passwords = [generate_traditional_password() for _ in range(10)]
 
-    # ✅ Compare Passwords
-    comparison_results = [{"Type": "AI-Generated", "Password": ai_password, "Entropy": calculate_entropy(ai_password), "Brute-Force Time (s)": brute_force_complexity(ai_password)}]
+    # ✅ Compare Passwords (Entropy & Brute-Force Complexity)
+    comparison_results = []
 
+    # ✅ AI Password Entropy Calculation
+    ai_entropy = calculate_entropy(ai_password)
+    ai_brute_time = brute_force_complexity(ai_password)
+    comparison_results.append({
+        "Type": "AI-Generated",
+        "Password": ai_password,
+        "Entropy": ai_entropy,
+        "Brute-Force Time (s)": ai_brute_time
+    })
+    print(f"🟢 DEBUG: AI Password: {ai_password} | Entropy: {ai_entropy} | Brute-Force Time: {ai_brute_time}")
+
+    # ✅ Traditional Passwords Entropy Calculation
     for pwd in traditional_passwords:
-        comparison_results.append({"Type": "Traditional", "Password": pwd, "Entropy": calculate_entropy(pwd), "Brute-Force Time (s)": brute_force_complexity(pwd)})
+        entropy = calculate_entropy(pwd)
+        brute_time = brute_force_complexity(pwd)
+        comparison_results.append({
+            "Type": "Traditional",
+            "Password": pwd,
+            "Entropy": entropy,
+            "Brute-Force Time (s)": brute_time
+        })
+        print(f"🟢 DEBUG: Traditional Password: {pwd} | Entropy: {entropy} | Brute-Force Time: {brute_time}")
 
-    # ✅ Return Traditional Passwords alongside AI password results
+    # ✅ Log entropy results in a separate file
+    log_entropy_results(comparison_results)
+
     return {
         "ai_password": ai_password,
         "traditional_passwords": traditional_passwords,
@@ -49,7 +76,66 @@ def process_audio_and_generate_password(audio_path):
     }
 
     
+def log_entropy_results(results):
+    """Logs entropy and brute-force complexity results to a separate file."""
+    log_file = "backend/temp/entropy_results_log.csv"
 
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+    if not results or len(results) == 0:
+        print("❌ ERROR: No entropy results to log!")
+        return  # Exit early if there are no results
+
+    print(f"🟢 DEBUG: Logging {len(results)} passwords to entropy log...")
+
+    # ✅ Convert results into a dictionary format like `log_test_results()`
+    entropy_results = {
+        "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "AI_Password": None,
+        "AI_Entropy": None,
+        "AI_Brute_Force_Time": None,
+        "Traditional_Passwords": []
+    }
+
+    traditional_password_metrics = []
+
+    for entry in results:
+        if entry["Type"] == "AI-Generated":
+            entropy_results["AI_Password"] = entry["Password"]
+            entropy_results["AI_Entropy"] = entry["Entropy"]
+            entropy_results["AI_Brute_Force_Time"] = entry["Brute-Force Time (s)"]
+        else:
+            traditional_password_metrics.append(
+                f"{entry['Password']} (Entropy: {entry['Entropy']}, Time: {entry['Brute-Force Time (s)']}s)"
+            )
+
+    entropy_results["Traditional_Passwords"] = "; ".join(traditional_password_metrics)
+
+    # ✅ Debugging before writing
+    print(f"🟢 DEBUG: Final Entropy Results → {entropy_results}")
+
+    try:
+        file_exists = os.path.isfile(log_file)
+
+        with open(log_file, mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
+
+            # ✅ Write headers only if file does not exist
+            if not file_exists:
+                writer.writerow(["Timestamp", "AI_Password", "AI_Entropy", "AI_Brute_Force_Time", "Traditional_Passwords"])
+
+            writer.writerow([
+                entropy_results["Timestamp"],
+                entropy_results["AI_Password"],
+                entropy_results["AI_Entropy"],
+                entropy_results["AI_Brute_Force_Time"],
+                entropy_results["Traditional_Passwords"]
+            ])
+
+        print(f"✅ Entropy results logged in {log_file}")
+
+    except Exception as e:
+        print(f"❌ Error logging entropy results: {e}")
 
 ### ✅ PASS-PHRASE FUNCTIONS
 def extract_passphrase():

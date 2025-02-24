@@ -19,6 +19,7 @@ PASSWORD_FILE = "generated_password.txt"
 generated_password = None  
 test_results = {}  # Stores test results for comparison
 
+
 ### ✅ PASSWORD HANDLING FUNCTIONS
 def save_password(password):
     """Save the AI-generated password for login verification."""
@@ -231,7 +232,7 @@ def log_test_results():
     # ✅ Ensure Claude's response is not overwritten
     if "Claude" not in test_results:
         test_results["Claude"] = {}
-        
+
     gpt_attempts_list = test_results["GPT"].get("attempts", [])
     if not gpt_attempts_list or not isinstance(gpt_attempts_list, list):
         gpt_attempts_list = ["No attempts generated"]
