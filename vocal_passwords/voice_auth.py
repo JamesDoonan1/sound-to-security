@@ -3,10 +3,13 @@ import os
 import csv
 import speech_recognition as sr
 
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
+
 # File paths for stored data
 VOICEPRINT_FILE = "stored_voiceprint.npy"
-PASSPHRASE_FILE = "stored_passphrase.txt"
-AUTH_LOG_FILE = "authentication_log.csv"
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend"))
+PASSPHRASE_FILE = os.path.join(DATA_DIR, "stored_passphrase.txt")
 
 ### 🛠 VOICEPRINT STORAGE & VERIFICATION ###
 def save_voiceprint(voice_features):

@@ -4,6 +4,8 @@ import time
 import csv
 from dotenv import load_dotenv
 
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
 PASSWORD_LOG_FILE = os.path.join(LOGS_DIR, "password_log.csv")
 

@@ -5,6 +5,7 @@ import os
 
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
 FEATURE_LOG_FILE = os.path.join(LOGS_DIR, "voice_features_log.csv")
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
 
 def log_voice_features(mfcc_mean, spectral_centroid_mean, tempo):
     """Logs extracted voice features to a CSV file."""

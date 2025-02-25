@@ -11,13 +11,14 @@ from vocal_passwords.feature_extraction import extract_audio_features
 from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint,verify_passphrase, verify_voice, load_passphrase
 
 # Paths for stored data
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
+PASSWORD_FILE = os.path.join(DATA_DIR, "generated_password.txt")
 VOICEPRINT_FILE = "stored_voiceprint.npy"
-PASSWORD_FILE = "generated_password.txt"
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
 PASSWORD_RESULT_LOG = os.path.join(LOGS_DIR, "password_result_log.csv")
 PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
-
-
+HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
 # Global variables
 generated_password = None  
@@ -45,7 +46,10 @@ def save_hashed_password(password):
 
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
     
-    with open("hashed_password.txt", "w") as f:
+    # Correct file path
+    HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
+
+    with open(HASHED_PASSWORD_FILE, "w") as f:  # Use correct path
         f.write(hashed_password + "\n")  
 
     return hashed_password
@@ -196,10 +200,6 @@ def run_security_tests():
     compare_button.config(state=tk.NORMAL)
 
 ### ✅ LOGGING FUNCTION
-
-
-
-
 def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
@@ -356,10 +356,12 @@ def on_login():
                 print("✅ Passphrase matched! Now verifying AI-generated password...")
                 user_entered_password = simpledialog.askstring("Password Required", "Enter the AI-generated password:")
                 
-                # ✅ Load the stored hashed password
-                with open("hashed_password.txt", "r") as f:
-                    stored_hashed_password = f.read().strip()
+                # ✅ Correct file path for hashed password
+                HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
+                # ✅ Load the stored hashed password
+                with open(HASHED_PASSWORD_FILE, "r") as f:
+                    stored_hashed_password = f.read().strip()
                 # ✅ Hash the user-entered password before comparison
                 user_hashed_password = hashlib.sha256(user_entered_password.encode()).hexdigest()
 

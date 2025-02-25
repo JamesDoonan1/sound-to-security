@@ -1,9 +1,12 @@
 import subprocess
 import os
+import os
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
 
 HASHCAT_PATH = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
-HASH_FILE = "password_hash.txt"  # Hash file location (temporary storage)
-WORDLIST_FILE = "wordlist.txt"  # Custom wordlist for dictionary attack
+HASH_FILE = os.path.join(DATA_DIR, "password_hash.txt")
+WORDLIST_FILE = os.path.join(DATA_DIR, "rockyou.txt")
 
 def save_hash(password_hash):
     """Saves the given hash to a file for Hashcat processing."""

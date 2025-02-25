@@ -14,11 +14,14 @@ import time
 # 📌 Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-security/`
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
+
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))  
 ENTROPY_LOG_FILE = os.path.join(LOGS_DIR, "entropy_results_log.csv")
 
 # ✅ Correct file paths for passphrase and voiceprint
-PASSPHRASE_FILE = os.path.join(ROOT_DIR, "stored_passphrase.txt")
+PASSPHRASE_FILE = os.path.join(DATA_DIR, "stored_passphrase.txt")
 VOICEPRINT_FILE = os.path.join(ROOT_DIR, "stored_voiceprint.npy")
 ### ✅ PASSWORD GENERATION FUNCTION
 
