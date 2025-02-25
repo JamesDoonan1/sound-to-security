@@ -63,3 +63,7 @@ def convert_to_jsonl(input_file, output_train, output_val):
                 f_val.write("\n")
 
         print(f"Fold {fold} data saved.")
+
+if __name__ == "__main__":
+    # Final entry point to run the data conversion
+    convert_to_jsonl(INPUT_JSON, OUTPUT_JSONL_TRAIN, OUTPUT_JSONL_VAL)
