@@ -33,3 +33,24 @@ def convert_to_jsonl(input_file, output_train, output_val):
 
         print(f"Preparing data for fold {fold}.")
 
+        # Create training data
+        train_file_path = output_train.replace(".jsonl", f"_fold{fold}.jsonl")
+        with open(train_file_path, "w") as f_train:
+            for entry in train_data:
+                prompt = predict_hash_and_password(
+                    mfccs=str(entry["features"]["MFCCs"]),
+                    spectral_centroid=str(entry["features"]["Spectral Centroid"]),
+                    spectral_contrast=str(entry["features"]["Spectral Contrast"]),
+                    tempo=entry["features"]["Tempo"]["mean"],
+                    beats=int(entry["features"]["Beats"]["mean"])
+                )
+
+                completion = f"Hash: {entry['hash']}\nPassword: {entry['password']}"
+
+                json.dump({
+                    "messages": [
+                        {"role": "user", "content": prompt},
+                        {"role": "assistant", "content": completion}
+                    ]
+                }, f_train)
+                f_train.write("\n")
