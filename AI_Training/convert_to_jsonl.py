@@ -19,4 +19,17 @@ def predict_hash_and_password(
     Given summarized audio features, predict the MD5 hash and the password.
     """
 
+def convert_to_jsonl(input_file, output_train, output_val):
+    with open(input_file, "r") as f:
+        data = json.load(f)
+
+    # Apply KFold cross-validation
+    kf = KFold(n_splits=KFOLD_SPLITS, shuffle=True, random_state=42)
+    data = list(data)
+
+    for fold, (train_index, val_index) in enumerate(kf.split(data)):
+        train_data = [data[i] for i in train_index]
+        val_data = [data[i] for i in val_index]
+
+        print(f"Preparing data for fold {fold}.")
 
