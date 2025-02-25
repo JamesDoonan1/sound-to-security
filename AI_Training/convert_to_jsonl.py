@@ -54,3 +54,12 @@ def convert_to_jsonl(input_file, output_train, output_val):
                     ]
                 }, f_train)
                 f_train.write("\n")
+        
+        # Write validation data
+        val_file_path = output_val.replace(".jsonl", f"_fold{fold}.jsonl")
+        with open(val_file_path, "w") as f_val:
+            for entry in val_data:
+                json.dump(entry, f_val)
+                f_val.write("\n")
+
+        print(f"Fold {fold} data saved.")
