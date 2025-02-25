@@ -14,9 +14,7 @@ import time
 # 📌 Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-security/`
-
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
-
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data"))
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))  
 ENTROPY_LOG_FILE = os.path.join(LOGS_DIR, "entropy_results_log.csv")
 
@@ -142,13 +140,23 @@ def log_entropy_results(results):
 ### ✅ PASS-PHRASE FUNCTIONS
 def extract_passphrase():
     """Retrieve the stored passphrase from the correct location."""
-    if os.path.exists(PASSPHRASE_FILE):
+    try:
+        # Ensure the file exists
+        if not os.path.exists(PASSPHRASE_FILE):
+            print(f"❌ ERROR: Passphrase file missing at: {PASSPHRASE_FILE}")
+            return None
+
+        # Read the passphrase
         with open(PASSPHRASE_FILE, "r") as f:
             passphrase = f.read().strip()
-            print(f"🛠 DEBUG: Extracted Passphrase → {passphrase}")  # ✅ Should print: "Georgie Porgie"
+            if not passphrase:
+                print("❌ ERROR: Passphrase file is empty!")
+                return None
+            print(f"🛠 DEBUG: Extracted Passphrase → {passphrase}")
             return passphrase
-    print("❌ ERROR: Passphrase file missing!")
-    return None  # 🔥 Fix: Don't return "UNKNOWN_PASSPHRASE", just return `None`.
+    except Exception as e:
+        print(f"❌ ERROR: Failed to read passphrase file: {e}")
+        return None   
 
 def save_passphrase(passphrase):
     """Save passphrase to the correct file."""

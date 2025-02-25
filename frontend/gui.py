@@ -12,13 +12,20 @@ from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_v
 
 # Paths for stored data
 
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/data"))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)  # moves up to 'sound-to-security'
+DATA_DIR = os.path.join(ROOT_DIR, "backend", "data")
+LOGS_DIR = os.path.join(ROOT_DIR, "backend", "logs")
+
 PASSWORD_FILE = os.path.join(DATA_DIR, "generated_password.txt")
-VOICEPRINT_FILE = "stored_voiceprint.npy"
-LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
+HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
+PASSPHRASE_FILE = os.path.join(DATA_DIR, "stored_passphrase.txt")
+VOICEPRINT_FILE = os.path.join(DATA_DIR, "stored_voiceprint.npy")
+
 PASSWORD_RESULT_LOG = os.path.join(LOGS_DIR, "password_result_log.csv")
 PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
-HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
+
+print(f"🛠 DEBUG: PASSPHRASE_FILE path: {PASSPHRASE_FILE}")
 
 # Global variables
 generated_password = None  
@@ -359,6 +366,12 @@ def on_login():
                 # ✅ Correct file path for hashed password
                 HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
+                # Check existence clearly
+                if not os.path.exists(HASHED_PASSWORD_FILE):
+                    print(f"❌ Error: Hashed password file missing at {HASHED_PASSWORD_FILE}")
+                    result_label.config(text="❌ Missing hashed password file.")
+                    return
+                
                 # ✅ Load the stored hashed password
                 with open(HASHED_PASSWORD_FILE, "r") as f:
                     stored_hashed_password = f.read().strip()
