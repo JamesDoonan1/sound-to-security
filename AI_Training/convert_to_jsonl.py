@@ -1,5 +1,6 @@
 import json
 import baml_py
+from sklearn.model_selection import KFold
 
 # File paths
 INPUT_JSON = "../audio_data.json"
