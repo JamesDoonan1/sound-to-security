@@ -22,7 +22,7 @@ PASSPHRASE_FILE = os.path.join(ROOT_DIR, "stored_passphrase.txt")
 VOICEPRINT_FILE = os.path.join(ROOT_DIR, "stored_voiceprint.npy")
 ### ✅ PASSWORD GENERATION FUNCTION
 
-def generate_traditional_password(length=5):
+def generate_traditional_password(length=12):
     """Generate a traditional password with a given length."""
     characters = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(characters) for i in range(length))

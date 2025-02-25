@@ -8,8 +8,7 @@ import pandas as pd
 from tkinter import messagebox, simpledialog
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
-from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice, load_passphrase
-
+from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint,verify_passphrase, verify_voice, load_passphrase
 
 # Paths for stored data
 VOICEPRINT_FILE = "stored_voiceprint.npy"
@@ -339,6 +338,9 @@ def log_error(error):
             f.write(f"[{timestamp}] Error in logging test results: {str(error)}\n")
     except Exception as e:
         print(f"❌ Failed to log error: {str(e)}")
+
+
+
 def on_login():
     """Handles voice-based login authentication."""
     print("🔐 Step 1: Recording login voice...")
@@ -352,14 +354,20 @@ def on_login():
         if verify_voice(features):
             print("✅ Voice matched! Checking passphrase...")
             recognized_passphrase = recognize_speech("vocal_input.wav")  
-            stored_passphrase = load_password()
+            stored_passphrase = load_passphrase()
 
             if verify_passphrase(recognized_passphrase):
                 print("✅ Passphrase matched! Now verifying AI-generated password...")
                 user_entered_password = simpledialog.askstring("Password Required", "Enter the AI-generated password:")
-                stored_password = load_password()
+                
+                # ✅ Load the stored hashed password
+                with open("hashed_password.txt", "r") as f:
+                    stored_hashed_password = f.read().strip()
 
-                if user_entered_password == stored_password:
+                # ✅ Hash the user-entered password before comparison
+                user_hashed_password = hashlib.sha256(user_entered_password.encode()).hexdigest()
+
+                if user_hashed_password == stored_hashed_password:
                     print("✅ Access Granted! 🎉")
                     result_label.config(text="✅ Access Granted! 🎉")
                 else:
