@@ -13,6 +13,11 @@ from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_v
 # Paths for stored data
 VOICEPRINT_FILE = "stored_voiceprint.npy"
 PASSWORD_FILE = "generated_password.txt"
+LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
+PASSWORD_RESULT_LOG = os.path.join(LOGS_DIR, "password_result_log.csv")
+PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
+
+
 
 # Global variables
 generated_password = None  
@@ -193,9 +198,14 @@ def run_security_tests():
 ### ✅ LOGGING FUNCTION
 
 
+
+
 def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
-    log_file = "backend/temp/password_result_log.csv"
+    global test_results, generated_password
+
+    # ✅ Ensure the logs directory exists
+    os.makedirs(LOGS_DIR, exist_ok=True)
 
     if test_results.get("passphrase") in ["UNKNOWN_PHRASE", "ERROR", None, "N/A"]:
         test_results["passphrase"] = load_passphrase()
@@ -212,17 +222,8 @@ def log_test_results():
             item["Password"] for item in test_results.get("comparison", []) if item["Type"] == "Traditional"
         ]
 
-    # ✅ Ensure we extract traditional passwords if they exist in 'comparison'
-    if not traditional_passwords_list:
-        traditional_passwords_list = [
-            item["Password"] for item in test_results.get("comparison", []) if item["Type"] == "Traditional"
-        ]
-
     # Convert to string format
-    if isinstance(traditional_passwords_list, list) and traditional_passwords_list:
-        traditional_passwords_str = "; ".join(traditional_passwords_list)
-    else:
-        traditional_passwords_str = "N/A"
+    traditional_passwords_str = "; ".join(traditional_passwords_list) if traditional_passwords_list else "N/A"
 
     # Debugging output
     print(f"🟢 DEBUG: Extracted Traditional Passwords → {traditional_passwords_list}")
@@ -238,11 +239,7 @@ def log_test_results():
     gpt_attempts_str = ", ".join(gpt_attempts_list)
 
     try:
-        # ✅ Ensure directory exists
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
         print(f"DEBUG: Final passphrase being logged: {test_results['passphrase']}")
-        # Debugging before writing to CSV
 
         # ✅ Define column headers and their corresponding data mappings
         columns = {
@@ -258,13 +255,12 @@ def log_test_results():
             "GPT_Attempts": lambda: gpt_attempts_str,
             "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
             "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A"),
-            "Traditional_Passwords": lambda: traditional_passwords_str 
-
+            "Traditional_Passwords": lambda: traditional_passwords_str
         }
 
-        file_exists = os.path.isfile(log_file)
+        file_exists = os.path.isfile(PASSWORD_RESULT_LOG)
 
-        with open(log_file, mode="a", newline="", encoding="utf-8") as file:
+        with open(PASSWORD_RESULT_LOG, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
 
             if not file_exists:
@@ -272,7 +268,7 @@ def log_test_results():
 
             writer.writerow([func() for func in columns.values()])
 
-        print(f"✅ Security test results saved to {log_file}")
+        print(f"✅ Security test results saved to {PASSWORD_RESULT_LOG}")
 
     except Exception as e:
         print(f"❌ Error logging test results: {e}")
@@ -386,7 +382,7 @@ def on_login():
 
 def compare_ai_results():
     """Opens a new window to display AI vs Traditional Password Comparison."""
-    log_file = "backend/temp/password_result_log.csv"
+    log_file = "backend/logs/password_result_log.csv"
 
     if not os.path.exists(log_file):
         messagebox.showerror("Error", "No test results available. Run security tests first.")

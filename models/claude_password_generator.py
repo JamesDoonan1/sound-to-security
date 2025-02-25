@@ -4,21 +4,23 @@ import time
 import csv
 from dotenv import load_dotenv
 
-PASSWORD_LOG_FILE = "password_log.csv"
+LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
+PASSWORD_LOG_FILE = os.path.join(LOGS_DIR, "password_log.csv")
 
 # Load environment variables
 load_dotenv()
 anthropic_api_key = os.getenv("CLAUDE_API_KEY")
 
+
 def log_password(password, status):
     """Logs generated passwords and validation status to a CSV file."""
-    file_exists = os.path.isfile(PASSWORD_LOG_FILE)
+    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensure `logs/` exists
 
-    with open(PASSWORD_LOG_FILE, mode="a", newline="") as file:
+    with open(PASSWORD_LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
 
-        if not file_exists:
-            writer.writerow(["Generated Password", "Valid"])  # Header
+        if not os.path.isfile(PASSWORD_LOG_FILE):
+            writer.writerow(["Generated Password", "Valid"])
 
         writer.writerow([password, status])
 

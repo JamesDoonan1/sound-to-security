@@ -14,8 +14,8 @@ import time
 # 📌 Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-security/`
-ENTROPY_LOG_FILE = os.path.join(os.path.dirname(__file__), "entropy_results_log.csv")
-
+LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))  
+ENTROPY_LOG_FILE = os.path.join(LOGS_DIR, "entropy_results_log.csv")
 
 # ✅ Correct file paths for passphrase and voiceprint
 PASSPHRASE_FILE = os.path.join(ROOT_DIR, "stored_passphrase.txt")
@@ -78,10 +78,9 @@ def process_audio_and_generate_password(audio_path):
     
 def log_entropy_results(results):
     """Logs entropy and brute-force complexity results to a separate file."""
-    log_file = "backend/temp/entropy_results_log.csv"
-
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-
+    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensures `logs/` exists
+    log_file = os.path.join(LOGS_DIR, "entropy_results_log.csv")
+    
     if not results or len(results) == 0:
         print("❌ ERROR: No entropy results to log!")
         return  # Exit early if there are no results

@@ -3,17 +3,18 @@ import numpy as np
 import csv
 import os
 
-FEATURE_LOG_FILE = "voice_features_log.csv"
+LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/logs"))  
+FEATURE_LOG_FILE = os.path.join(LOGS_DIR, "voice_features_log.csv")
 
 def log_voice_features(mfcc_mean, spectral_centroid_mean, tempo):
     """Logs extracted voice features to a CSV file."""
-    file_exists = os.path.isfile(FEATURE_LOG_FILE)
+    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensure `logs/` exists
 
-    with open(FEATURE_LOG_FILE, mode="a", newline="") as file:
+    with open(FEATURE_LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
 
-        if not file_exists:
-            writer.writerow(["MFCC Mean", "Spectral Centroid", "Tempo (BPM)"])  # Header
+        if not os.path.isfile(FEATURE_LOG_FILE):
+            writer.writerow(["MFCC Mean", "Spectral Centroid", "Tempo (BPM)"])
 
         writer.writerow([mfcc_mean, spectral_centroid_mean, tempo])
 
