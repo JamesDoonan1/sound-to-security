@@ -6,7 +6,7 @@ from sklearn.model_selection import KFold
 INPUT_JSON = "/home/cormacgeraghty/Desktop/Project Code/sample_audio_data.json"
 OUTPUT_JSONL_TRAIN = "train_data.jsonl"
 OUTPUT_JSONL_VAL = "val_data.jsonl"
-KFOLD_SPLITS = 5
+KFOLD_SPLITS = 1  # Use all data for training
 
 def build_prompt_text(entry: dict) -> str:
     """
@@ -30,46 +30,35 @@ def build_prompt_text(entry: dict) -> str:
 
 def convert_to_jsonl(input_file, output_train, output_val):
     """
-    Reads audio data from `input_file`, applies K-Fold splitting,
-    then writes user+assistant messages to JSONL files for each fold.
+    Reads audio data from `input_file` and writes all entries to a single training file.
     """
     with open(input_file, "r") as f:
         data = json.load(f)
 
-    kf = KFold(n_splits=KFOLD_SPLITS, shuffle=True, random_state=42)
-    data = list(data)
+    train_data = data  # Use all data for training
+    val_data = []  # No validation set
 
-    for fold, (train_index, val_index) in enumerate(kf.split(data)):
-        train_data = [data[i] for i in train_index]
-        val_data = [data[i] for i in val_index]
+    print(f"Using entire dataset for training. Total examples: {len(train_data)}")
 
-        print(f"Preparing data for fold {fold}...")
+    # Process Training Data
+    train_file_path = output_train.replace(".jsonl", "_fold0.jsonl")
+    with open(train_file_path, "w") as f_train:
+        for entry in train_data:
+            prompt_text = build_prompt_text(entry)
+            completion = f"Hash: {entry['hash']}\nPassword: {entry['password']}"
+            json.dump({
+                "messages": [
+                    {"role": "user", "content": prompt_text},
+                    {"role": "assistant", "content": completion}
+                ]
+            }, f_train)
+            f_train.write("\n")
 
-        train_file_path = output_train.replace(".jsonl", f"_fold{fold}.jsonl")
-        with open(train_file_path, "w") as f_train:
-            for entry in train_data:
-                prompt_text = build_prompt_text(entry)
-                completion = f"Hash: {entry['hash']}\nPassword: {entry['password']}"
-                json.dump({
-                    "messages": [
-                        {"role": "user", "content": prompt_text},
-                        {"role": "assistant", "content": completion}
-                    ]
-                }, f_train)
-                f_train.write("\n")
-
-        val_file_path = output_val.replace(".jsonl", f"_fold{fold}.jsonl")
-        with open(val_file_path, "w") as f_val:
-            for entry in val_data:
-                json.dump(entry, f_val)
-                f_val.write("\n")
-
-        print(f"Fold {fold} data saved. Train size: {len(train_data)}, Validation size: {len(val_data)}.")
+    print(f"Training data saved: {train_file_path} (Total examples: {len(train_data)})")
 
 def test_script():
     """
     Runs JSON -> JSONL conversion using `sample_audio_data.json`
-    to ensure it's working correctly.
     """
     print("\n--- Running convert_to_jsonl on sample_audio_data.json ---\n")
     convert_to_jsonl(INPUT_JSON, OUTPUT_JSONL_TRAIN, OUTPUT_JSONL_VAL)
