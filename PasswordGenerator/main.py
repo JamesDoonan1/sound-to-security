@@ -10,10 +10,33 @@ from encrypt_decrypt_password import encrypt_password, decrypt_password
 from database_control import initialize_db, store_encrypted_password, get_encrypted_password
 
 AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
-OUTPUT_JSON_FILE = "audio_data.json"
+OUTPUT_JSON_FILE = "/home/cormacgeraghty/Desktop/Project Code/audio_data.json"
 
-# A global list to store data for JSON
-audio_data_list = []
+print(f"JSON file being used: {os.path.abspath(OUTPUT_JSON_FILE)}")
+
+
+# Load existing JSON data to count processed files
+if os.path.exists(OUTPUT_JSON_FILE):
+    try:
+        with open(OUTPUT_JSON_FILE, "r") as f:
+            raw_json = f.read().strip()  # Read raw JSON data and remove any whitespace
+            print(f"Raw JSON content: {raw_json}")  # Debugging: Show the file's actual content
+            
+            if raw_json:  # If the file is not empty
+                audio_data_list = json.loads(raw_json)
+            else:
+                audio_data_list = []  # Start fresh if the file is empty
+            
+        processed_count = len(audio_data_list)
+        print(f"Found existing JSON with {processed_count} processed files.")
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"JSON file is empty or corrupted: {e}. Starting fresh.")
+        audio_data_list = []
+        processed_count = 0
+else:
+    print("No JSON file found. Starting fresh.")
+    audio_data_list = []
+    processed_count = 0
 
 def summarize_array(arr: np.ndarray) -> dict:
     """
@@ -64,12 +87,10 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
                 password = None
 
         # 5) Summarize each feature array
-        summarized_features = {}
-        for k, v in features.items():
-            if isinstance(v, np.ndarray) and v.size > 0:
-                summarized_features[k] = summarize_array(v)
-            else:
-                summarized_features[k] = None
+        summarized_features = {
+            k: summarize_array(v) if isinstance(v, np.ndarray) and v.size > 0 else None
+            for k, v in features.items()
+        }
 
         # 6) Build a record with only the needed info
         audio_entry = {
@@ -80,7 +101,16 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
 
         audio_data_list.append(audio_entry)
 
-        # Print stored JSON entry in terminal
+        # Debugging: Print before writing
+        print(f"Current data list before saving: {json.dumps(audio_data_list, indent=4)}")
+
+        # Save JSON immediately after each file
+        with open(OUTPUT_JSON_FILE, "w") as f:
+            json.dump(audio_data_list, f, indent=4)
+            f.flush()  # Ensure data is written immediately
+            os.fsync(f.fileno())  # Force the OS to write the file
+
+        print(f"Updated JSON after processing {file_name}.")
         print(json.dumps(audio_entry, indent=4))
 
     except Exception as e:
@@ -94,33 +124,31 @@ if __name__ == "__main__":
     initialize_db()
     password_gen = AIPasswordGenerator()
 
+    file_list = sorted(os.listdir(AUDIO_FOLDER_PATH))  # Ensure consistent order
     file_count = 0  # Track processed file count
 
     print("\nStarting audio file processing...\n")
 
-    # Loop once over each .mp3 file
-    for file_name in os.listdir(AUDIO_FOLDER_PATH):
+    for file_name in file_list:
         if not file_name.endswith(".mp3"):
             continue
 
-        file_count += 1
+        # Skip already processed files
+        if file_count < processed_count:
+            print(f"Skipping {file_name} (already processed).")
+            file_count += 1
+            continue
 
         file_path = os.path.join(AUDIO_FOLDER_PATH, file_name)
         print("=" * 60)  # Separator for readability
 
         try:
             y, sr = librosa.load(file_path, sr=None)
-            process_audio_file(file_name, y, sr, password_gen, file_count)
+            process_audio_file(file_name, y, sr, password_gen, file_count + 1)  # Adjusted count
         except Exception as e:
             print(f"Failed to process {file_name}: {e}")
 
-    print("=" * 60)
-    print(f"\nProcessing completed. Total files processed: {file_count}")
+        file_count += 1  # Only increment after processing
 
-    # Write the final dataset to JSON
-    if audio_data_list:
-        with open(OUTPUT_JSON_FILE, "w") as f:
-            json.dump(audio_data_list, f, indent=4)
-        print(f"\nSaved {len(audio_data_list)} entries to '{OUTPUT_JSON_FILE}'.")
-    else:
-        print("No features extracted; nothing to save.")
+    print("=" * 60)
+    print(f"\nProcessing completed. Total new files processed: {file_count - processed_count}")

@@ -55,23 +55,21 @@ class AIPasswordGenerator:
             formatted_features = self._format_features_for_prompt(features)
 
             prompt = f"""
-            Generate a secure password that reflects these audio characteristics:
-            
+            Generate a cryptographically strong password exactly 12 characters long.
+            It must match the following rules:
+
             {formatted_features}
-            
-            Requirements:
-            - Length 12 characters
-            - Include uppercase and lowercase letters
-            - Include numbers
-            - Include special characters (e.g. ^, *, ~, _, #, @, &)
-            - Reflect brightness or mellowness in symbol choice
-            - Reflect harmonic richness or darkness in letter case choice
-            - Reflect tempo in number usage
-            - Reflect beats in special character usage
-            - No obvious patterns
-            - Must be cryptographically strong
-            
-            Return only the password with no additional text.
+
+            - Include uppercase and lowercase letters.
+            - Include numbers.
+            - Include special characters (e.g. ^, *, ~, _, #, @, &).
+            - Reflect brightness or mellowness in symbol choice.
+            - Reflect harmonic richness or darkness in letter case choice.
+            - Reflect tempo in number usage.
+            - Reflect beats in special character usage.
+            - No obvious patterns.
+
+            Return only the password with exactly 12 characters and no extra text.
             """
 
             completion = client.chat.completions.create(
