@@ -104,7 +104,7 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
         audio_data_list.append(audio_entry)
 
         # Debugging: Print before writing
-        print(f"Current data list before saving: {json.dumps(audio_data_list, indent=4)}")
+        # print(f"Current data list before saving: {json.dumps(audio_data_list, indent=4)}")
 
         # Save JSON immediately after each file
         with open(OUTPUT_JSON_FILE, "w") as f:
@@ -112,7 +112,7 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
             f.flush()  # Ensure data is written immediately
             os.fsync(f.fileno())  # Force the OS to write the file
 
-        print(f"Updated JSON after processing {file_name}.")
+        # print(f"Updated JSON after processing {file_name}.")
         print(json.dumps(audio_entry, indent=4))
 
     except Exception as e:

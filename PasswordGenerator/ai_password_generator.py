@@ -53,7 +53,7 @@ class AIPasswordGenerator:
         """
         try:
             formatted_features = self._format_features_for_prompt(features)
-            print("Formatted Features for Prompt:", formatted_features)  # Debugging output
+            # print("Formatted Features for Prompt:", formatted_features)  # Debugging output
 
             prompt = f"""
             Generate a secure password that reflects these audio characteristics:
@@ -88,7 +88,7 @@ class AIPasswordGenerator:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,  # Allows more variation
-                top_p=0.9,  # Encourages diverse output while staying relevant
+                top_p=0.9,  # Encourages creative output while staying relevant to prompt rules
                 frequency_penalty=0,
                 presence_penalty=0
             )
