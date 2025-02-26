@@ -2,7 +2,6 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
-from audio_feature_extraction import extract_features  # Ensure correct import
 
 # Load API key from environment variables
 load_dotenv()
