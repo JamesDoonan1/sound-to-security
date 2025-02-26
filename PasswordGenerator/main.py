@@ -20,7 +20,9 @@ if os.path.exists(OUTPUT_JSON_FILE):
     try:
         with open(OUTPUT_JSON_FILE, "r") as f:
             raw_json = f.read().strip()  # Read raw JSON data and remove any whitespace
-            print(f"Raw JSON content: {raw_json}")  # Debugging: Show the file's actual content
+            
+            # Debugging: Show the file's actual content
+            # print(f"Raw JSON content: {raw_json}") 
             
             if raw_json:  # If the file is not empty
                 audio_data_list = json.loads(raw_json)

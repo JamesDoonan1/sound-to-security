@@ -2,7 +2,7 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
-from audio_feature_extraction import extract_features  # Just in case it's needed internally
+from audio_feature_extraction import extract_features  # Ensure correct import
 
 # Load API key from environment variables
 load_dotenv()
@@ -53,13 +53,15 @@ class AIPasswordGenerator:
         """
         try:
             formatted_features = self._format_features_for_prompt(features)
+            print("Formatted Features for Prompt:", formatted_features)  # Debugging output
 
             prompt = f"""
-            Generate a cryptographically strong password exactly 12 characters long.
-            It must match the following rules:
+            Generate a secure password that reflects these audio characteristics:
 
             {formatted_features}
 
+            Requirements:
+            - Length exactly 12 characters.
             - Include uppercase and lowercase letters.
             - Include numbers.
             - Include special characters (e.g. ^, *, ~, _, #, @, &).
@@ -68,9 +70,16 @@ class AIPasswordGenerator:
             - Reflect tempo in number usage.
             - Reflect beats in special character usage.
             - No obvious patterns.
+            - Must be cryptographically strong.
+            - **Use musical words related to brightness, harmony, rhythm, and energy (e.g., "Bright", "Harmonic", "Beat", "Melody", "Dark", "Bass", etc.).**
+            - **If brightness is high, use words like "Bright", "Treble", "Sharp".**
+            - **If brightness is low, use words like "Dark", "Bass", "Deep".**
+            - **If the tempo is fast, reflect energy with words like "Rush", "Quick", "Pulse".**
+            - **If the tempo is slow, reflect smoothness with words like "Flow", "Calm", "Ease".**
 
             Return only the password with exactly 12 characters and no extra text.
-            """
+"""
+
 
             completion = client.chat.completions.create(
                 model="gpt-4o",
@@ -78,8 +87,8 @@ class AIPasswordGenerator:
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0,
-                top_p=1,
+                temperature=0.7,  # Allows more variation
+                top_p=0.9,  # Encourages diverse output while staying relevant
                 frequency_penalty=0,
                 presence_penalty=0
             )
