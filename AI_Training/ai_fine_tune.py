@@ -4,18 +4,17 @@ import os
 # Load OpenAI API Key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-DATA_PATH = "../../"
+DATA_PATH = "../"  
 
-# Fine-tune for each K-Fold split
-for fold in range(5):
-    train_path = os.path.join(DATA_PATH, f"train_data_fold{fold}.jsonl")
-    val_path = os.path.join(DATA_PATH, f"val_data_fold{fold}.jsonl")
+# Use only Fold 0 for testing
+fold = 0
+train_path = os.path.join(DATA_PATH, f"train_data_fold{fold}.jsonl")
+val_path = os.path.join(DATA_PATH, f"val_data_fold{fold}.jsonl")
 
-    # Check if files exist
-    if not os.path.exists(train_path) or not os.path.exists(val_path):
-        print(f"Error: Missing files for fold {fold}: {train_path} or {val_path}")
-        continue
-
+# Check if files exist before proceeding
+if not os.path.exists(train_path) or not os.path.exists(val_path):
+    print(f"Error: Missing files for fold {fold}: {train_path} or {val_path}")
+else:
     print(f"Using files: {train_path}, {val_path}")
 
     train_file = openai.File.create(file=open(train_path, "rb"), purpose="fine-tune")
