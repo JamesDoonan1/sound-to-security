@@ -60,7 +60,7 @@ class AIPasswordGenerator:
             {formatted_features}
             
             Requirements:
-            - Length between 16 and 32 characters
+            - Length 12 characters
             - Include uppercase and lowercase letters
             - Include numbers
             - Include special characters (e.g. ^, *, ~, _, #, @, &)
@@ -75,6 +75,7 @@ class AIPasswordGenerator:
             """
 
             completion = client.chat.completions.create(
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}

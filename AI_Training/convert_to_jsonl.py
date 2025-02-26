@@ -15,6 +15,10 @@ def predict_hash_and_password(
     spectral_contrast: str,
     tempo: float,
     beats: int,
+    harmonic_components: float,
+    percussive_components: float,
+    zero_crossing_rate: float,
+    chroma_features: float
 ) -> str:
     """
     Given summarized audio features, predict the MD5 hash and the password.
@@ -39,12 +43,16 @@ def convert_to_jsonl(input_file, output_train, output_val):
         with open(train_file_path, "w") as f_train:
             for entry in train_data:
                 prompt = predict_hash_and_password(
-                    mfccs=str(entry["features"]["MFCCs"]),
-                    spectral_centroid=str(entry["features"]["Spectral Centroid"]),
-                    spectral_contrast=str(entry["features"]["Spectral Contrast"]),
+                    mfccs=str(entry["features"]["MFCCs"]["mean"]),
+                    spectral_centroid=str(entry["features"]["Spectral Centroid"]["mean"]),
+                    spectral_contrast=str(entry["features"]["Spectral Contrast"]["mean"]),
                     tempo=entry["features"]["Tempo"]["mean"],
-                    beats=int(entry["features"]["Beats"]["mean"])
-                )
+                    beats=int(entry["features"]["Beats"]["mean"]),
+                    harmonic_components=entry["features"]["Harmonic Components"]["mean"],
+                    percussive_components=entry["features"]["Percussive Components"]["mean"],
+                    zero_crossing_rate=entry["features"]["Zero-Crossing Rate"]["mean"],
+                    chroma_features=entry["features"]["Chroma Features (CENS)"]["mean"]
+)
 
                 completion = f"Hash: {entry['hash']}\nPassword: {entry['password']}"
 
