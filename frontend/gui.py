@@ -6,12 +6,12 @@ import requests
 import hashlib
 import pandas as pd
 from tkinter import messagebox, simpledialog
+from tkinter import ttk
 from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
-from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint,verify_passphrase, verify_voice, load_passphrase
+from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice, load_passphrase
 
 # Paths for stored data
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)  # moves up to 'sound-to-security'
 DATA_DIR = os.path.join(ROOT_DIR, "backend", "data")
@@ -25,12 +25,9 @@ VOICEPRINT_FILE = os.path.join(DATA_DIR, "stored_voiceprint.npy")
 PASSWORD_RESULT_LOG = os.path.join(LOGS_DIR, "password_result_log.csv")
 PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
 
-print(f"🛠 DEBUG: PASSPHRASE_FILE path: {PASSPHRASE_FILE}")
-
 # Global variables
 generated_password = None  
 test_results = {}  # Stores test results for comparison
-
 
 ### ✅ PASSWORD HANDLING FUNCTIONS
 def save_password(password):
@@ -56,13 +53,12 @@ def save_hashed_password(password):
     # Correct file path
     HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
-    with open(HASHED_PASSWORD_FILE, "w") as f:  # Use correct path
+    with open(HASHED_PASSWORD_FILE, "w") as f:  
         f.write(hashed_password + "\n")  
 
     return hashed_password
 
 ### ✅ PASSWORD GENERATION HANDLER
-
 def on_generate():
     """Handles AI password generation and comparison with traditional passwords."""
     global generated_password  
@@ -104,11 +100,6 @@ def on_generate():
             # ✅ Ensure Traditional Passwords are stored in test_results
             test_results["Traditional_Passwords"] = traditional_passwords if traditional_passwords else ["N/A"]
 
-            # ✅ Debugging - Print Traditional Passwords to ensure they exist
-            print(f"🟢 DEBUG: Traditional Passwords stored in test_results: {test_results['Traditional_Passwords']}")
-
-            print(f"🟢 DEBUG: Full API Response: {data}")  # ✅ Add this inside on_generate()
-
             # ✅ Hash and store AI-generated password
             hashed_password = save_hashed_password(generated_password)
             print(f"✅ Hashed AI Password: {hashed_password}")
@@ -142,7 +133,6 @@ def run_security_tests():
     if "Traditional_Passwords" not in test_results:
          test_results["Traditional_Passwords"] = []
 
-
     print("🔍 Running security tests...")
 
     # ✅ Claude AI Password Guessing Test
@@ -167,9 +157,6 @@ def run_security_tests():
         response.raise_for_status()
         response_data = response.json()
 
-        # ✅ Debugging API Response
-        print(f"🟢 DEBUG: GPT Full API Response: {response_data}")
-
         # ✅ Explicitly store and format attempted passwords
         gpt_attempts = response_data.get("attempts", [])
         if not gpt_attempts or not isinstance(gpt_attempts, list):
@@ -181,16 +168,11 @@ def run_security_tests():
             "attempts": gpt_attempts  # ✅ Ensure it is always a list
         }
 
-        # ✅ Additional Debugging Before Logging
-        print(f"🟢 DEBUG: GPT Stored Attempts in test_results: {test_results['GPT']['attempts']}")
-
     except requests.RequestException as e:
         print(f"❌ GPT Testing Error: {e}")
         test_results["GPT"] = {"cracked": "Error", "time": "N/A", "attempts": ["Error retrieving attempts."]}
 
     time.sleep(1)
-
-
 
     # ✅ Brute-Force Test
     try:
@@ -232,10 +214,6 @@ def log_test_results():
     # Convert to string format
     traditional_passwords_str = "; ".join(traditional_passwords_list) if traditional_passwords_list else "N/A"
 
-    # Debugging output
-    print(f"🟢 DEBUG: Extracted Traditional Passwords → {traditional_passwords_list}")
-    print(f"🟢 DEBUG: Traditional Passwords to be logged → {traditional_passwords_str}")
-    
     # ✅ Ensure Claude's response is not overwritten
     if "Claude" not in test_results:
         test_results["Claude"] = {}
@@ -342,8 +320,6 @@ def log_error(error):
     except Exception as e:
         print(f"❌ Failed to log error: {str(e)}")
 
-
-
 def on_login():
     """Handles voice-based login authentication."""
     print("🔐 Step 1: Recording login voice...")
@@ -356,8 +332,7 @@ def on_login():
         print("🛠 Step 3: Verifying voiceprint...")
         if verify_voice(features):
             print("✅ Voice matched! Checking passphrase...")
-            recognized_passphrase = recognize_speech("vocal_input.wav")  
-            stored_passphrase = load_passphrase()
+            recognized_passphrase = recognize_speech("vocal_input.wav")
 
             if verify_passphrase(recognized_passphrase):
                 print("✅ Passphrase matched! Now verifying AI-generated password...")
@@ -393,7 +368,6 @@ def on_login():
     else:
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
-
 
 def compare_ai_results():
     """Opens a new window to display AI vs Traditional Password Comparison."""
@@ -455,18 +429,22 @@ app.title("Secure AI Password Generator")
 app.geometry("600x500")
 app.configure(bg="#282c34")
 
+# Custom style for buttons
+style = ttk.Style()
+style.configure("TButton", font=("Helvetica", 14), padding=10)
+style.map("TButton", background=[("active", "#61dafb")])
+
 header_label = tk.Label(app, text="Vocal-Based Password Generator", font=("Helvetica", 18, "bold"), fg="#61dafb", bg="#282c34")
 header_label.pack(pady=20)
 
-generate_button = tk.Button(app, text="Generate Password", font=("Helvetica", 14), bg="#61dafb", command=on_generate)
+generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=on_generate)
 generate_button.pack(pady=10)
 
-compare_button = tk.Button(app, text="Compare AI Results", font=("Helvetica", 14), bg="#20B2AA", state=tk.DISABLED, command=compare_ai_results)
+compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)
 
-login_button = tk.Button(app, text="Login", font=("Helvetica", 14), bg="lightblue", command=on_login)
+login_button = ttk.Button(app, text="Login", style="TButton", command=on_login)
 login_button.pack(pady=10)
-
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")
 result_label.pack(pady=20)
