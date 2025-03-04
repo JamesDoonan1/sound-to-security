@@ -1,5 +1,4 @@
 import os
-import json
 import librosa
 import numpy as np
 import tkinter as tk
@@ -10,14 +9,12 @@ from symmetric_key_generation import derive_key_from_hash
 from encrypt_decrypt_password import encrypt_password, decrypt_password
 from database_control import initialize_db, store_encrypted_password, get_encrypted_password
 
-OUTPUT_JSON_FILE = "/home/cormacgeraghty/Desktop/Project Code/audio_data.json"
-
 # Initialize database
 initialize_db()
 password_gen = AIPasswordGenerator()
 
 def process_audio_file(file_path):
-    """Processes an audio file with special characters in the name."""
+    """Processes an audio file, generates a password, and stores it in the database."""
     try:
         file_name = os.path.basename(file_path)
         print(f"\nProcessing file: {file_name}")
@@ -63,25 +60,6 @@ def process_audio_file(file_path):
             else:
                 print("Failed to generate password.")
                 password = None
-
-        # Save processed file details
-        audio_entry = {"file_name": file_name, "hash": audio_hash, "password": password}
-
-        # Save to JSON
-        if os.path.exists(OUTPUT_JSON_FILE):
-            with open(OUTPUT_JSON_FILE, "r") as f:
-                try:
-                    audio_data_list = json.load(f)
-                except json.JSONDecodeError:
-                    audio_data_list = []
-        else:
-            audio_data_list = []
-
-        audio_data_list.append(audio_entry)
-        with open(OUTPUT_JSON_FILE, "w") as f:
-            json.dump(audio_data_list, f, indent=4)
-
-        print(json.dumps(audio_entry, indent=4))
 
     except Exception as e:
         print(f"Error processing file {file_name}: {e}")
