@@ -443,8 +443,11 @@ generate_button.pack(pady=10)
 compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)
 
-login_button = ttk.Button(app, text="Login", style="TButton", command=on_login)
+login_button = ttk.Button(app, text="Voice Login", style="TButton", command=on_login)
 login_button.pack(pady=10)
+
+file_login_button = ttk.Button(app, text="Audio File Login", style="TButton", command=on_login)
+file_login_button.pack(pady=10)
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")
 result_label.pack(pady=20)
