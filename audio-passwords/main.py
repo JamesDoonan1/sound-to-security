@@ -1,24 +1,22 @@
 import tkinter as tk
-from tkinter import filedialog, simpledialog, messagebox
+from tkinter import filedialog, messagebox
 from account_password_creation import create_password_from_audio
 from account_login import authenticate_with_audio
 
 def choose_audio_file(for_login=False):
-    """Opens a file dialog to select an audio file for processing."""
+    """Opens a file dialog to select an audio file for password creation or login."""
     file_path = filedialog.askopenfilename(
-        initialdir="/home/cormacgeraghty/Desktop",  # Force it to open in Desktop
-        filetypes=[("All Files", "*.*")]
+        initialdir="/home/cormacgeraghty/Desktop",
+        filetypes=[("Audio Files", "*.mp3;*.wav")]
     )
 
     if file_path:
         if for_login:
-            entered_password = simpledialog.askstring("Enter Password", "Enter the stored password:")
-            if entered_password:
-                success = authenticate_with_audio(file_path, entered_password)
-                if success:
-                    messagebox.showinfo("Login", "Login Successful!")
-                else:
-                    messagebox.showerror("Login", "Incorrect Password or No stored password found.")
+            success = authenticate_with_audio(file_path)
+            if success:
+                messagebox.showinfo("Login", "Login Successful!")
+            else:
+                messagebox.showerror("Login", "Login Failed: No matching password found.")
         else:
             password = create_password_from_audio(file_path)
             if password:
