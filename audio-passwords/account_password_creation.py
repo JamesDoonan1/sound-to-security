@@ -28,7 +28,11 @@ def create_password_from_audio(file_path):
             print(f"Failed to extract features for {file_name}.")
             return
 
+        # Generate hash
         audio_hash = create_hash(features)
+        print(f"Generated Hash: {audio_hash}")
+
+        # Derive key
         key = derive_key_from_hash(audio_hash)
 
         # Check if password already exists
@@ -41,7 +45,7 @@ def create_password_from_audio(file_path):
             if password:
                 encrypted_pw = encrypt_password(password, key)
                 store_encrypted_password(audio_hash, encrypted_pw)
-                print(f"Generated new password: {password}")
+                print(f"Generated AI Password: {password}")
             else:
                 print("Failed to generate password.")
                 password = None
