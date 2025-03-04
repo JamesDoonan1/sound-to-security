@@ -53,9 +53,20 @@ def save_hashed_password(password):
     # Correct file path
     HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
-    with open(HASHED_PASSWORD_FILE, "w") as f:  
-        f.write(hashed_password + "\n")  
+    try:
+        with open(HASHED_PASSWORD_FILE, "a", encoding="utf-8") as f:  
+            f.write(hashed_password + "\n")  
+        
+        print(f"✅ Hashed password saved successfully at {HASHED_PASSWORD_FILE}")
 
+    except Exception as e:
+        print(f"❌ Error saving hashed password: {e}")
+
+    # ✅ Store hashed password in `test_results`
+    global test_results
+    test_results["hashed_password"] = hashed_password  # ✅ FIXED: Now it will be logged
+
+    print(f"✅ Hashed AI Password: {hashed_password}")
     return hashed_password
 
 ### ✅ PASSWORD GENERATION HANDLER
@@ -99,12 +110,18 @@ def on_generate():
             print(f"✅ Traditional Passwords: {', '.join(traditional_passwords)}")
             # ✅ Ensure Traditional Passwords are stored in test_results
             test_results["Traditional_Passwords"] = traditional_passwords if traditional_passwords else ["N/A"]
-
-            # ✅ Hash and store AI-generated password
+            
             hashed_password = save_hashed_password(generated_password)
-            print(f"✅ Hashed AI Password: {hashed_password}")
+            test_results["hashed_password"] = hashed_password  # ✅ Store in test results
 
-            # ✅ Update UI
+            # ✅ Debugging: Check if the file was created
+            HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
+            if os.path.exists(HASHED_PASSWORD_FILE):
+                print(f"🟢 DEBUG: Hashed password file exists at {HASHED_PASSWORD_FILE}")
+            else:
+                print("❌ ERROR: Hashed password file was not created!")
+
+                        # ✅ Update UI
             result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Passwords: {', '.join(traditional_passwords)}\n\n🔍 Running security tests...")
 
             # ✅ Ensure button exists before disabling
@@ -193,6 +210,11 @@ def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
 
+    # ✅ Ensure hashed password exists in `test_results`
+    if "hashed_password" not in test_results or not test_results["hashed_password"]:
+        print("⚠️ WARNING: Hashed password missing from test_results! Setting to N/A.")
+        test_results["hashed_password"] = "N/A"
+
     # ✅ Ensure the logs directory exists
     os.makedirs(LOGS_DIR, exist_ok=True)
 
@@ -230,6 +252,7 @@ def log_test_results():
         columns = {
             "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
             "AI_Password": lambda: generated_password or "N/A",
+            "Hashed Password": lambda: test_results.get("hashed_password", "N/A"),  # ✅ FIXED
             "Passphrase": lambda: test_results.get("passphrase", "N/A"),
             "Claude_Cracked": lambda: test_results.get("Claude", {}).get("cracked", "N/A"),
             "Claude_Time": lambda: test_results.get("Claude", {}).get("time", "N/A"),
