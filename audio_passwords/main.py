@@ -6,7 +6,7 @@ from audio_passwords.account_login import authenticate_with_audio
 def choose_audio_file(for_login=False):
     """Opens a file dialog to select an audio file for processing."""
     file_path = filedialog.askopenfilename(
-        initialdir="/home/cormacgeraghty/Desktop",  # Force it to open in Desktop
+        initialdir="/home/cormacgeraghty/Desktop",
         filetypes=[("All Files", "*.*")]
     )
 
