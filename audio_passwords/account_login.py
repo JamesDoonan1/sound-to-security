@@ -23,12 +23,15 @@ def authenticate_with_audio(file_path):
             print("Failed to extract features for login.")
             return False
 
-        # Generate hash and derive key
-        audio_hash = create_hash(features)
-        key = derive_key_from_hash(audio_hash)
+        # Generate full hash and derive key
+        full_audio_hash = create_hash(features)
+        key = derive_key_from_hash(full_audio_hash)
+
+        # Extract partial hash identifier for lookup
+        partial_hash = full_audio_hash[:16]  # Only storing a portion for lookup security
 
         # Retrieve stored password
-        encrypted_pw = get_encrypted_password(audio_hash)
+        encrypted_pw = get_encrypted_password(partial_hash)
         if encrypted_pw:
             stored_password = decrypt_password(encrypted_pw, key)
             print(f"Retrieved stored password: {stored_password}")  # Debugging Output

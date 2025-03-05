@@ -28,26 +28,27 @@ def create_password_from_audio(file_path):
             print(f"Failed to extract features for {file_name}.")
             return "Error: Feature extraction failed"
 
-        # Generate hash
-        audio_hash = create_hash(features)
-        print(f"Generated Hash: {audio_hash}")  # Output hash to terminal
+        # Generate full hash and extract partial identifier
+        full_audio_hash = create_hash(features)
+        partial_hash = full_audio_hash[:16]  # Only storing a portion for lookup security
+        print(f"Generated Partial Hash Identifier: {partial_hash}")
 
-        # Derive key
-        key = derive_key_from_hash(audio_hash)
+        # Derive key from full hash
+        key = derive_key_from_hash(full_audio_hash)
 
         # Check if password already exists
-        encrypted_pw = get_encrypted_password(audio_hash)
+        encrypted_pw = get_encrypted_password(partial_hash)
         if encrypted_pw:
             print("Password already exists for this audio file.")
             stored_password = decrypt_password(encrypted_pw, key)
-            print(f"Stored AI-Generated Password: {stored_password}")  # Output AI password to terminal
+            print(f"Stored AI-Generated Password: {stored_password}")
             return "Password already exists for this audio file."
         else:
             password = password_gen.generate_password(features)
             if password:
                 encrypted_pw = encrypt_password(password, key)
-                store_encrypted_password(audio_hash, encrypted_pw)
-                print(f"Generated AI Password: {password}")  # Output AI password to terminal
+                store_encrypted_password(partial_hash, encrypted_pw) 
+                print(f"Generated AI Password: {password}")
                 return "Password created successfully."
             else:
                 print("Failed to generate password.")
