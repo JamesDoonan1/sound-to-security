@@ -5,6 +5,7 @@ from ai_password_generator import AIPasswordGenerator
 from symmetric_key_generation import derive_key_from_hash
 from encrypt_decrypt_password import encrypt_password
 from database_control import initialize_db, store_encrypted_password, get_encrypted_password
+from encrypt_decrypt_password import encrypt_password, decrypt_password
 
 # Initialize database
 initialize_db()
@@ -18,7 +19,7 @@ def create_password_from_audio(file_path):
 
         if not os.path.exists(file_path):
             print(f"Error: File not found -> {file_path}")
-            return
+            return "Error: File not found"
 
         # Load audio
         y, sr = librosa.load(file_path, sr=None)
@@ -26,11 +27,11 @@ def create_password_from_audio(file_path):
 
         if not features:
             print(f"Failed to extract features for {file_name}.")
-            return
+            return "Error: Feature extraction failed"
 
         # Generate hash
         audio_hash = create_hash(features)
-        print(f"Generated Hash: {audio_hash}")
+        print(f"Generated Hash: {audio_hash}")  # Output hash to terminal
 
         # Derive key
         key = derive_key_from_hash(audio_hash)
@@ -38,19 +39,21 @@ def create_password_from_audio(file_path):
         # Check if password already exists
         encrypted_pw = get_encrypted_password(audio_hash)
         if encrypted_pw:
-            password = encrypted_pw
-            print(f"Password already exists for this audio.")
+            print("Password already exists for this audio file.")
+            stored_password = decrypt_password(encrypted_pw, key)
+            print(f"Stored AI-Generated Password: {stored_password}")  # Output AI password to terminal
+            return "Password already exists for this audio file."
         else:
             password = password_gen.generate_password(features)
             if password:
                 encrypted_pw = encrypt_password(password, key)
                 store_encrypted_password(audio_hash, encrypted_pw)
-                print(f"Generated AI Password: {password}")
+                print(f"Generated AI Password: {password}")  # Output AI password to terminal
+                return "Password created successfully."
             else:
                 print("Failed to generate password.")
-                password = None
-
-        return password
+                return "Error: Failed to generate password."
 
     except Exception as e:
         print(f"Error processing file {file_name}: {e}")
+        return "Error: An issue occurred during processing."

@@ -440,6 +440,9 @@ header_label.pack(pady=20)
 generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=on_generate)
 generate_button.pack(pady=10)
 
+generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=on_generate)
+generate_file_button.pack(pady=10)
+
 compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)
 

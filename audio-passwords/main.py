@@ -4,11 +4,12 @@ from account_password_creation import create_password_from_audio
 from account_login import authenticate_with_audio
 
 def choose_audio_file(for_login=False):
-    """Opens a file dialog to select an audio file for password creation or login."""
+    """Opens a file dialog to select an audio file for processing."""
     file_path = filedialog.askopenfilename(
-        initialdir="/home/cormacgeraghty/Desktop",
-        filetypes=[("Audio Files", "*.mp3;*.wav")]
+        initialdir="/home/cormacgeraghty/Desktop",  # Force it to open in Desktop
+        filetypes=[("All Files", "*.*")]
     )
+
 
     if file_path:
         if for_login:
@@ -18,11 +19,8 @@ def choose_audio_file(for_login=False):
             else:
                 messagebox.showerror("Login", "Login Failed: No matching password found.")
         else:
-            password = create_password_from_audio(file_path)
-            if password:
-                messagebox.showinfo("Success", f"Generated Password: {password}")
-            else:
-                messagebox.showerror("Error", "Failed to generate a password.")
+            message = create_password_from_audio(file_path)
+            messagebox.showinfo("Password Creation", message)
 
 # GUI Setup
 app = tk.Tk()
