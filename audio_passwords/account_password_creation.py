@@ -1,11 +1,10 @@
 import os
 import librosa
-from hash_password_generator import extract_features, create_hash
-from ai_password_generator import AIPasswordGenerator
-from symmetric_key_generation import derive_key_from_hash
-from encrypt_decrypt_password import encrypt_password
-from database_control import initialize_db, store_encrypted_password, get_encrypted_password
-from encrypt_decrypt_password import encrypt_password, decrypt_password
+from audio_passwords.hash_password_generator import extract_features, create_hash
+from audio_passwords.ai_password_generator import AIPasswordGenerator
+from audio_passwords.symmetric_key_generation import derive_key_from_hash
+from audio_passwords.database_control import initialize_db, store_encrypted_password, get_encrypted_password
+from audio_passwords.encrypt_decrypt_password import encrypt_password, decrypt_password
 
 # Initialize database
 initialize_db()

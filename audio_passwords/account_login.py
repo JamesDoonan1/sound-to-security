@@ -1,9 +1,9 @@
 import os
 import librosa
-from hash_password_generator import extract_features, create_hash
-from symmetric_key_generation import derive_key_from_hash
-from encrypt_decrypt_password import decrypt_password
-from database_control import get_encrypted_password
+from audio_passwords.hash_password_generator import extract_features, create_hash
+from audio_passwords.symmetric_key_generation import derive_key_from_hash
+from audio_passwords.encrypt_decrypt_password import decrypt_password
+from audio_passwords.database_control import get_encrypted_password
 
 def authenticate_with_audio(file_path):
     """Verifies if an audio file matches a stored password (No manual password entry)."""

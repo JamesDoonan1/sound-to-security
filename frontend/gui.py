@@ -11,6 +11,8 @@ from vocal_passwords.voice_processing import record_audio
 from vocal_passwords.feature_extraction import extract_audio_features
 from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_voiceprint, verify_passphrase, verify_voice, load_passphrase
 
+from audio_passwords.main import choose_audio_file
+
 # Paths for stored data
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)  # moves up to 'sound-to-security'
@@ -440,7 +442,7 @@ header_label.pack(pady=20)
 generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=on_generate)
 generate_button.pack(pady=10)
 
-generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=on_generate)
+generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=lambda: choose_audio_file(for_login=False))
 generate_file_button.pack(pady=10)
 
 compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
@@ -449,7 +451,7 @@ compare_button.pack(pady=5)
 login_button = ttk.Button(app, text="Voice Login", style="TButton", command=on_login)
 login_button.pack(pady=10)
 
-file_login_button = ttk.Button(app, text="Audio File Login", style="TButton", command=on_login)
+file_login_button = ttk.Button(app, text="Audio File Login", style="TButton", command=lambda: choose_audio_file(for_login=True))
 file_login_button.pack(pady=10)
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")

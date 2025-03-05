@@ -1,7 +1,8 @@
 import numpy as np
 import hashlib
 
-from audio_feature_extraction import extract_features 
+from audio_passwords.audio_feature_extraction import extract_features
+
 
 def create_hash(features):
     """
