@@ -138,7 +138,8 @@ def on_generate():
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
 
-### ✅ AUTOMATED SECURITY TESTS
+# Update these functions in gui.py
+
 def run_security_tests():
     """Automatically runs all security tests after password generation."""
     global generated_password, test_results
@@ -198,6 +199,79 @@ def run_security_tests():
         test_results["Brute Force"] = response.json()
     except requests.RequestException:
         test_results["Brute Force"] = {"cracked": "Error", "time": "N/A"}
+    
+    time.sleep(1)
+    
+    # Update this part of the run_security_tests function in gui.py
+
+    # ✅ NEW: Hashcat MD5 Test
+    try:
+        # Hash the password with MD5 for Hashcat testing
+        password_hash = hashlib.md5(generated_password.encode()).hexdigest()
+        
+        # Call the Hashcat API endpoint
+        response = requests.post(
+            "http://127.0.0.1:5000/api/test-password-hashcat", 
+            json={
+                "password_hash": password_hash,
+                "hash_type": "0",  # MD5
+                "attack_mode": "3"  # Brute-force
+            }
+        )
+        
+        response.raise_for_status()
+        hashcat_result = response.json()
+        
+        test_results["Hashcat_MD5"] = {
+            "cracked": hashcat_result.get("cracked", False),
+            "result": hashcat_result.get("result", "N/A"),
+            "hash": password_hash
+        }
+        
+        print(f"✅ Hashcat MD5 Test Result: {hashcat_result}")
+        
+    except requests.RequestException as e:
+        print(f"❌ Hashcat Testing Error: {e}")
+        test_results["Hashcat_MD5"] = {
+            "cracked": "Error", 
+            "result": f"Error: {str(e)}", 
+            "hash": hashlib.md5(generated_password.encode()).hexdigest()
+        }
+
+    time.sleep(1)
+
+    # ✅ NEW: Hashcat SHA-256 Test
+    try:
+        # Also test with SHA-256
+        password_hash = hashlib.sha256(generated_password.encode()).hexdigest()
+        
+        response = requests.post(
+            "http://127.0.0.1:5000/api/test-password-hashcat", 
+            json={
+                "password_hash": password_hash,
+                "hash_type": "1400",  # SHA-256
+                "attack_mode": "3"  # Brute-force
+            }
+        )
+        
+        response.raise_for_status()
+        hashcat_result = response.json()
+        
+        test_results["Hashcat_SHA256"] = {
+            "cracked": hashcat_result.get("cracked", False),
+            "result": hashcat_result.get("result", "N/A"),
+            "hash": password_hash
+        }
+        
+        print(f"✅ Hashcat SHA-256 Test Result: {hashcat_result}")
+        
+    except requests.RequestException as e:
+        print(f"❌ Hashcat SHA-256 Testing Error: {e}")
+        test_results["Hashcat_SHA256"] = {
+            "cracked": "Error", 
+            "result": f"Error: {str(e)}", 
+            "hash": hashlib.sha256(generated_password.encode()).hexdigest()
+        }
 
     # ✅ Log results
     log_test_results()
@@ -205,7 +279,6 @@ def run_security_tests():
     # ✅ Enable "Compare AI Results" button after tests complete
     compare_button.config(state=tk.NORMAL)
 
-### ✅ LOGGING FUNCTION
 def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
@@ -252,7 +325,6 @@ def log_test_results():
         columns = {
             "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
             "AI_Password": lambda: generated_password or "N/A",
-            "Hashed Password": lambda: test_results.get("hashed_password", "N/A"),  # ✅ FIXED
             "Passphrase": lambda: test_results.get("passphrase", "N/A"),
             "Claude_Cracked": lambda: test_results.get("Claude", {}).get("cracked", "N/A"),
             "Claude_Time": lambda: test_results.get("Claude", {}).get("time", "N/A"),
@@ -263,7 +335,15 @@ def log_test_results():
             "GPT_Attempts": lambda: gpt_attempts_str,
             "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
             "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A"),
-            "Traditional_Passwords": lambda: traditional_passwords_str
+            # ✅ NEW: Add Hashcat results to columns
+            "Hashcat_MD5_Cracked": lambda: test_results.get("Hashcat_MD5", {}).get("cracked", "N/A"),
+            "Hashcat_MD5_Result": lambda: test_results.get("Hashcat_MD5", {}).get("result", "N/A"),
+            "Hashcat_MD5_Hash": lambda: test_results.get("Hashcat_MD5", {}).get("hash", "N/A"),
+            "Hashcat_SHA256_Cracked": lambda: test_results.get("Hashcat_SHA256", {}).get("cracked", "N/A"),
+            "Hashcat_SHA256_Result": lambda: test_results.get("Hashcat_SHA256", {}).get("result", "N/A"),
+            "Hashcat_SHA256_Hash": lambda: test_results.get("Hashcat_SHA256", {}).get("hash", "N/A"),
+            "Traditional_Passwords": lambda: traditional_passwords_str,
+            "Hashed Password": lambda: test_results.get("hashed_password", "N/A") 
         }
 
         file_exists = os.path.isfile(PASSWORD_RESULT_LOG)
@@ -280,6 +360,121 @@ def log_test_results():
 
     except Exception as e:
         print(f"❌ Error logging test results: {e}")
+
+def compare_ai_results():
+    """Opens a new window to display AI vs Traditional Password Comparison."""
+    log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
+
+    if not os.path.exists(log_file):
+        messagebox.showerror("Error", "No test results available. Run security tests first.")
+        return
+
+    try:
+        # Load CSV file into a DataFrame
+        df = pd.read_csv(log_file)
+
+        if df.empty:
+            messagebox.showerror("Error", "No data found in the log file.")
+            return
+
+        # Get the latest test result (last row)
+        latest_result = df.iloc[-1]
+
+        # ✅ Extract key data
+        ai_password = latest_result["AI_Password"]
+        passphrase = latest_result["Passphrase"]
+        cl_cracked = latest_result["Claude_Cracked"]
+        cl_attempts = latest_result["Claude_Attempts"]
+        gpt_cracked = latest_result["GPT_Cracked"]
+        gpt_attempts = latest_result["GPT_Attempts"]
+        brute_cracked = latest_result["Brute_Cracked"]
+        
+        # ✅ NEW: Get Hashcat results if they exist
+        hashcat_md5_cracked = "N/A" 
+        hashcat_md5_result = "N/A"
+        hashcat_sha256_cracked = "N/A"
+        hashcat_sha256_result = "N/A"
+        
+        if "Hashcat_MD5_Cracked" in latest_result:
+            hashcat_md5_cracked = latest_result["Hashcat_MD5_Cracked"]
+            hashcat_md5_result = latest_result["Hashcat_MD5_Result"]
+            
+        if "Hashcat_SHA256_Cracked" in latest_result:
+            hashcat_sha256_cracked = latest_result["Hashcat_SHA256_Cracked"]
+            hashcat_sha256_result = latest_result["Hashcat_SHA256_Result"]
+            
+        traditional_passwords = latest_result["Traditional_Passwords"]
+
+        # ✅ Create a new Tkinter window to display results
+        compare_window = tk.Toplevel(app)
+        compare_window.title("AI Password Security Comparison")
+        compare_window.geometry("700x650")  # ✅ Made window larger for additional info
+
+        tk.Label(compare_window, text="🔍 AI Password Security Results", font=("Helvetica", 16, "bold")).pack(pady=10)
+        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", font=("Helvetica", 12)).pack()
+        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", font=("Helvetica", 12)).pack()
+        
+        # ✅ Create a frame for the results
+        results_frame = tk.Frame(compare_window)
+        results_frame.pack(pady=15, fill=tk.BOTH, expand=True)
+        
+        # ✅ Add headers
+        headers = ["Test Method", "Cracked?", "Details"]
+        for i, header in enumerate(headers):
+            tk.Label(results_frame, text=header, font=("Helvetica", 12, "bold"), 
+                    borderwidth=1, relief="solid", width=20).grid(row=0, column=i, sticky="nsew", padx=2, pady=2)
+        
+        # ✅ Add results in a grid format
+        # Claude row
+        tk.Label(results_frame, text="Claude AI", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(cl_cracked), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=cl_attempts, font=("Helvetica", 12), 
+                borderwidth=1, relief="solid", wraplength=250).grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
+        
+        # GPT row
+        tk.Label(results_frame, text="GPT-4", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(gpt_cracked), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=2, column=1, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(gpt_attempts), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid", wraplength=250).grid(row=2, column=2, sticky="nsew", padx=2, pady=2)
+        
+        # Brute Force row
+        tk.Label(results_frame, text="Brute Force", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=3, column=0, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(brute_cracked), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=3, column=1, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text="Timeout: 30 seconds", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=3, column=2, sticky="nsew", padx=2, pady=2)
+        
+        # ✅ NEW: Hashcat MD5 row
+        tk.Label(results_frame, text="Hashcat (MD5)", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=4, column=0, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(hashcat_md5_cracked), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=4, column=1, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(hashcat_md5_result), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid", wraplength=250).grid(row=4, column=2, sticky="nsew", padx=2, pady=2)
+        
+        # ✅ NEW: Hashcat SHA-256 row
+        tk.Label(results_frame, text="Hashcat (SHA-256)", font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=5, column=0, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(hashcat_sha256_cracked), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid").grid(row=5, column=1, sticky="nsew", padx=2, pady=2)
+        tk.Label(results_frame, text=str(hashcat_sha256_result), font=("Helvetica", 12), 
+                borderwidth=1, relief="solid", wraplength=250).grid(row=5, column=2, sticky="nsew", padx=2, pady=2)
+        
+        # ✅ Traditional passwords section
+        tk.Label(compare_window, text="Traditional Passwords:", font=("Helvetica", 12, "bold")).pack(pady=(20,5))
+        tk.Label(compare_window, text=traditional_passwords, font=("Helvetica", 12), 
+                wraplength=600).pack(pady=5)
+
+        tk.Button(compare_window, text="Close", command=compare_window.destroy, 
+                 font=("Helvetica", 12)).pack(pady=20)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load test results: {e}")
 
 def flatten_columns(columns, prefix=""):
     """Flattens nested column structure into a list of header names."""

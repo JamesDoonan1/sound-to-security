@@ -111,10 +111,11 @@ def test_password_with_hashcat():
     if not password_hash:
         return jsonify({"error": "❌ No password hash provided!"}), 400
 
-    # Save the hash for Hashcat
-    save_hash(password_hash)
+    logging.info(f"🔨 Testing password hash with Hashcat: {password_hash[:10]}... (Type: {hash_type})")
 
-    # Run Hashcat to crack the hash
-    cracked, result = crack_password_with_hashcat(hash_type, attack_mode)
+    # Run Hashcat directly with the provided hash
+    cracked, result = crack_password_with_hashcat(hash_type, attack_mode, password_hash)
+    
+    logging.info(f"🔨 Hashcat result: Cracked: {cracked}, Result: {result}")
 
     return jsonify({"cracked": cracked, "result": result}), 200
