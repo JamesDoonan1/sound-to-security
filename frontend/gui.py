@@ -335,15 +335,15 @@ def log_test_results():
             "GPT_Attempts": lambda: gpt_attempts_str,
             "Brute_Cracked": lambda: test_results.get("Brute Force", {}).get("cracked", "N/A"),
             "Brute_Time": lambda: test_results.get("Brute Force", {}).get("time", "N/A"),
-            # ✅ NEW: Add Hashcat results to columns
+            "Traditional_Passwords": lambda: traditional_passwords_str,
+            "Hashed Password": lambda: test_results.get("hashed_password", "N/A"),
             "Hashcat_MD5_Cracked": lambda: test_results.get("Hashcat_MD5", {}).get("cracked", "N/A"),
             "Hashcat_MD5_Result": lambda: test_results.get("Hashcat_MD5", {}).get("result", "N/A"),
             "Hashcat_MD5_Hash": lambda: test_results.get("Hashcat_MD5", {}).get("hash", "N/A"),
             "Hashcat_SHA256_Cracked": lambda: test_results.get("Hashcat_SHA256", {}).get("cracked", "N/A"),
             "Hashcat_SHA256_Result": lambda: test_results.get("Hashcat_SHA256", {}).get("result", "N/A"),
-            "Hashcat_SHA256_Hash": lambda: test_results.get("Hashcat_SHA256", {}).get("hash", "N/A"),
-            "Traditional_Passwords": lambda: traditional_passwords_str,
-            "Hashed Password": lambda: test_results.get("hashed_password", "N/A") 
+            "Hashcat_SHA256_Hash": lambda: test_results.get("Hashcat_SHA256", {}).get("hash", "N/A")
+             
         }
 
         file_exists = os.path.isfile(PASSWORD_RESULT_LOG)
@@ -361,120 +361,6 @@ def log_test_results():
     except Exception as e:
         print(f"❌ Error logging test results: {e}")
 
-def compare_ai_results():
-    """Opens a new window to display AI vs Traditional Password Comparison."""
-    log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
-
-    if not os.path.exists(log_file):
-        messagebox.showerror("Error", "No test results available. Run security tests first.")
-        return
-
-    try:
-        # Load CSV file into a DataFrame
-        df = pd.read_csv(log_file)
-
-        if df.empty:
-            messagebox.showerror("Error", "No data found in the log file.")
-            return
-
-        # Get the latest test result (last row)
-        latest_result = df.iloc[-1]
-
-        # ✅ Extract key data
-        ai_password = latest_result["AI_Password"]
-        passphrase = latest_result["Passphrase"]
-        cl_cracked = latest_result["Claude_Cracked"]
-        cl_attempts = latest_result["Claude_Attempts"]
-        gpt_cracked = latest_result["GPT_Cracked"]
-        gpt_attempts = latest_result["GPT_Attempts"]
-        brute_cracked = latest_result["Brute_Cracked"]
-        
-        # ✅ NEW: Get Hashcat results if they exist
-        hashcat_md5_cracked = "N/A" 
-        hashcat_md5_result = "N/A"
-        hashcat_sha256_cracked = "N/A"
-        hashcat_sha256_result = "N/A"
-        
-        if "Hashcat_MD5_Cracked" in latest_result:
-            hashcat_md5_cracked = latest_result["Hashcat_MD5_Cracked"]
-            hashcat_md5_result = latest_result["Hashcat_MD5_Result"]
-            
-        if "Hashcat_SHA256_Cracked" in latest_result:
-            hashcat_sha256_cracked = latest_result["Hashcat_SHA256_Cracked"]
-            hashcat_sha256_result = latest_result["Hashcat_SHA256_Result"]
-            
-        traditional_passwords = latest_result["Traditional_Passwords"]
-
-        # ✅ Create a new Tkinter window to display results
-        compare_window = tk.Toplevel(app)
-        compare_window.title("AI Password Security Comparison")
-        compare_window.geometry("700x650")  # ✅ Made window larger for additional info
-
-        tk.Label(compare_window, text="🔍 AI Password Security Results", font=("Helvetica", 16, "bold")).pack(pady=10)
-        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", font=("Helvetica", 12)).pack()
-        
-        # ✅ Create a frame for the results
-        results_frame = tk.Frame(compare_window)
-        results_frame.pack(pady=15, fill=tk.BOTH, expand=True)
-        
-        # ✅ Add headers
-        headers = ["Test Method", "Cracked?", "Details"]
-        for i, header in enumerate(headers):
-            tk.Label(results_frame, text=header, font=("Helvetica", 12, "bold"), 
-                    borderwidth=1, relief="solid", width=20).grid(row=0, column=i, sticky="nsew", padx=2, pady=2)
-        
-        # ✅ Add results in a grid format
-        # Claude row
-        tk.Label(results_frame, text="Claude AI", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(cl_cracked), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=1, column=1, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=cl_attempts, font=("Helvetica", 12), 
-                borderwidth=1, relief="solid", wraplength=250).grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
-        
-        # GPT row
-        tk.Label(results_frame, text="GPT-4", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(gpt_cracked), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=2, column=1, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(gpt_attempts), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid", wraplength=250).grid(row=2, column=2, sticky="nsew", padx=2, pady=2)
-        
-        # Brute Force row
-        tk.Label(results_frame, text="Brute Force", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=3, column=0, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(brute_cracked), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=3, column=1, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text="Timeout: 30 seconds", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=3, column=2, sticky="nsew", padx=2, pady=2)
-        
-        # ✅ NEW: Hashcat MD5 row
-        tk.Label(results_frame, text="Hashcat (MD5)", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=4, column=0, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(hashcat_md5_cracked), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=4, column=1, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(hashcat_md5_result), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid", wraplength=250).grid(row=4, column=2, sticky="nsew", padx=2, pady=2)
-        
-        # ✅ NEW: Hashcat SHA-256 row
-        tk.Label(results_frame, text="Hashcat (SHA-256)", font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=5, column=0, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(hashcat_sha256_cracked), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid").grid(row=5, column=1, sticky="nsew", padx=2, pady=2)
-        tk.Label(results_frame, text=str(hashcat_sha256_result), font=("Helvetica", 12), 
-                borderwidth=1, relief="solid", wraplength=250).grid(row=5, column=2, sticky="nsew", padx=2, pady=2)
-        
-        # ✅ Traditional passwords section
-        tk.Label(compare_window, text="Traditional Passwords:", font=("Helvetica", 12, "bold")).pack(pady=(20,5))
-        tk.Label(compare_window, text=traditional_passwords, font=("Helvetica", 12), 
-                wraplength=600).pack(pady=5)
-
-        tk.Button(compare_window, text="Close", command=compare_window.destroy, 
-                 font=("Helvetica", 12)).pack(pady=20)
-
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to load test results: {e}")
 
 def flatten_columns(columns, prefix=""):
     """Flattens nested column structure into a list of header names."""
@@ -589,15 +475,26 @@ def on_login():
 
 def compare_ai_results():
     """Opens a new window to display AI vs Traditional Password Comparison."""
-    log_file = "backend/logs/password_result_log.csv"
+    log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
 
     if not os.path.exists(log_file):
         messagebox.showerror("Error", "No test results available. Run security tests first.")
         return
 
     try:
-        # Load CSV file into a DataFrame
-        df = pd.read_csv(log_file)
+        # Add error handling for CSV file format issues
+        try:
+            df = pd.read_csv(log_file)
+        except pd.errors.ParserError as e:
+            messagebox.showerror("Error", "CSV file format has changed. Creating a backup for historical data.")
+            
+            # Rename the old file for backup
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            backup_file = os.path.join(LOGS_DIR, f"password_result_log_backup_{timestamp}.csv")
+            os.rename(log_file, backup_file)
+            
+            messagebox.showinfo("Info", f"Old data backed up to {backup_file}\nPlease run a new test to generate updated results.")
+            return
 
         if df.empty:
             messagebox.showerror("Error", "No data found in the log file.")
@@ -606,36 +503,89 @@ def compare_ai_results():
         # Get the latest test result (last row)
         latest_result = df.iloc[-1]
 
-        # ✅ Extract key data
-        ai_password = latest_result["AI_Password"]
-        passphrase = latest_result["Passphrase"]
-        cl_cracked = latest_result["Claude_Cracked"]
-        cl_attempts = latest_result["Claude_Attempts"]
-        gpt_cracked = latest_result["GPT_Cracked"]
-        gpt_attempts = latest_result["GPT_Attempts"]
-        brute_cracked = latest_result["Brute_Cracked"]
-        traditional_passwords = latest_result["Traditional_Passwords"]
+        # Extract only the requested fields with error handling
+        try:
+            ai_password = latest_result["AI_Password"]
+            passphrase = latest_result["Passphrase"]
+            cl_attempts = latest_result["Claude_Attempts"]
+            gpt_cracked = latest_result["GPT_Cracked"]
+            gpt_attempts = latest_result["GPT_Attempts"]
+        except KeyError as e:
+            messagebox.showerror("Error", f"Missing field in results: {e}")
+            return
 
-        # ✅ Create a new Tkinter window to display results
+        # Create a new Tkinter window to display results
         compare_window = tk.Toplevel(app)
-        compare_window.title("AI Password Security Comparison")
-        compare_window.geometry("600x500")
+        compare_window.title("AI Password Security Results")
+        compare_window.geometry("600x400")
+        compare_window.configure(bg="#282c34")
 
-        tk.Label(compare_window, text="🔍 AI Password Security Results", font=("Helvetica", 16, "bold")).pack(pady=10)
-        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🤖 Claude Cracked: {cl_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🔓 Claude's Attempts: {cl_attempts}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🤖 GPT-4 Cracked: {gpt_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🔓 GPT-4's Attempts: {gpt_attempts}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🔨 Brute-Force Cracked: {brute_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f"🔑 Traditional Passwords: {traditional_passwords}", font=("Helvetica", 12, "bold")).pack()
-
-        tk.Button(compare_window, text="Close", command=compare_window.destroy).pack(pady=10)
+        # Add a header
+        tk.Label(compare_window, text="🔍 AI Password Security Results", 
+                font=("Helvetica", 16, "bold"), fg="#61dafb", bg="#282c34").pack(pady=10)
+        
+        # Display the selected fields
+        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", 
+                font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
+        
+        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", 
+                font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
+        
+        # Claude attempts section with scrolling text area for longer outputs
+        tk.Label(compare_window, text="🤖 Claude's Attempts:", 
+                font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
+                
+        cl_attempts_frame = tk.Frame(compare_window, bg="#282c34")
+        cl_attempts_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        
+        cl_attempts_text = tk.Text(cl_attempts_frame, height=5, width=60, 
+                                  wrap=tk.WORD, font=("Helvetica", 10),
+                                  bg="#1e2127", fg="white")
+        cl_attempts_text.insert(tk.END, cl_attempts)
+        cl_attempts_text.config(state=tk.DISABLED)  # Make read-only
+        
+        cl_scrollbar = tk.Scrollbar(cl_attempts_frame, command=cl_attempts_text.yview)
+        cl_attempts_text.configure(yscrollcommand=cl_scrollbar.set)
+        
+        cl_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        cl_attempts_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # GPT section
+        tk.Label(compare_window, text=f"🤖 GPT-4 Cracked: {gpt_cracked}", 
+                font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
+        
+        # GPT attempts with scrolling text
+        tk.Label(compare_window, text="🔓 GPT's Attempts:", 
+                font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
+                
+        gpt_attempts_frame = tk.Frame(compare_window, bg="#282c34")
+        gpt_attempts_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        
+        gpt_attempts_text = tk.Text(gpt_attempts_frame, height=5, width=60, 
+                                  wrap=tk.WORD, font=("Helvetica", 10),
+                                  bg="#1e2127", fg="white")
+        gpt_attempts_text.insert(tk.END, gpt_attempts)
+        gpt_attempts_text.config(state=tk.DISABLED)  # Make read-only
+        
+        gpt_scrollbar = tk.Scrollbar(gpt_attempts_frame, command=gpt_attempts_text.yview)
+        gpt_attempts_text.configure(yscrollcommand=gpt_scrollbar.set)
+        
+        gpt_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        gpt_attempts_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Link to CSV file
+        tk.Label(compare_window, text="For complete results, see CSV file:", 
+                font=("Helvetica", 10), fg="#61dafb", bg="#282c34").pack(pady=5)
+        tk.Label(compare_window, text=log_file, 
+                font=("Helvetica", 9), fg="white", bg="#282c34").pack()
+        
+        # Close button
+        tk.Button(compare_window, text="Close", 
+                font=("Helvetica", 12), bg="#61dafb", fg="#282c34",
+                command=compare_window.destroy).pack(pady=10)
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load test results: {e}")
-
 ### ✅ UI BUTTON HANDLING
 def disable_buttons():
     """Disables test button during automated testing."""
