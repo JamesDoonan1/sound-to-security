@@ -4,76 +4,58 @@ import sys
 import json
 from io import BytesIO
 from unittest.mock import patch, MagicMock
+from flask import Flask
 
-# Add project root to path for imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Add the 'backend' directory to sys.path to make 'services' importable
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend'))
-sys.path.append(backend_dir)
+# ✅ Dynamically adjust import paths for tests
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
 
 class TestPasswordRoutes(unittest.TestCase):
     """Test Flask routes for password generation and testing"""
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_home_route(self):
-        """Test the root route"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_generate_password_success(self):
-        """Test successful password generation endpoint"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_generate_password_no_audio(self):
-        """Test password generation endpoint with no audio file"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_generate_password_error(self):
-        """Test password generation endpoint when error occurs"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_gpt(self):
-        """Test password testing endpoint with GPT"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_claude(self):
-        """Test password testing endpoint with Claude"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_brute_force(self):
-        """Test password testing endpoint with brute force"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_no_password(self):
-        """Test password testing endpoint with no password provided"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_missing_voice_features(self):
-        """Test password testing endpoint when voice features are missing"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_exception(self):
-        """Test password testing endpoint when exception occurs"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_with_hashcat(self):
-        """Test Hashcat password cracking endpoint"""
-        pass
-    
-    @unittest.skip("Skipping route tests due to import and environment setup issues")
-    def test_test_password_with_hashcat_no_hash(self):
-        """Test Hashcat endpoint with no hash provided"""
-        pass
+
+    def setUp(self):
+        """Set up test Flask app and client"""
+        from backend.routes.passwords_routes import passwords_routes
+
+        self.app = Flask(__name__)
+        self.app.register_blueprint(passwords_routes)
+        self.app.config['TESTING'] = True
+        self.client = self.app.test_client()
+
+    @patch('backend.routes.passwords_routes.process_audio_and_generate_password')
+    def test_generate_password_success(self, mock_process_audio):
+        """Test successful password generation"""
+        mock_process_audio.return_value = {
+            'ai_password': 'AI_P@ssw0rd!',
+            'traditional_passwords': ['Trad1P@ss!', 'Trad2P@ss!'],
+            'comparison': [
+                {'Type': 'AI-Generated', 'Password': 'AI_P@ssw0rd!', 'Entropy': 75.0},
+                {'Type': 'Traditional', 'Password': 'Trad1P@ss!', 'Entropy': 70.0}
+            ]
+        }
+
+        response = self.client.post(
+            '/api/generate-password',
+            data={'audio': (BytesIO(b'fake audio data'), 'test_audio.wav')},
+            content_type='multipart/form-data'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['ai_password'], 'AI_P@ssw0rd!')
+        mock_process_audio.assert_called_once()
+
+    @patch('backend.routes.passwords_routes.process_audio_and_generate_password', side_effect=Exception("Processing error"))
+    def test_generate_password_error(self, mock_process_audio):
+        """Test error handling when password generation fails"""
+        response = self.client.post('/api/generate-password',
+                                    data={'audio': (BytesIO(b'fake audio data'), 'test_audio.wav')},
+                                    content_type='multipart/form-data')
+
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data)
+        self.assertIn("error", data)
+        self.assertIn("Processing error", data["error"])
 
 if __name__ == "__main__":
     unittest.main()
