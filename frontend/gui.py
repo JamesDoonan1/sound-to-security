@@ -122,13 +122,12 @@ def on_generate():
                 print("❌ ERROR: Hashed password file was not created!")
 
                         # ✅ Update UI
-            result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Passwords: {', '.join(traditional_passwords)}\n\n🔍 Running security tests...")
+            result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Passwords: {', '.join(traditional_passwords)}\n\n🔍 Password generated successfully! Click 'Run Security Tests' to evaluate.")
 
-            # ✅ Ensure button exists before disabling
-            compare_button.config(state=tk.DISABLED)
+            # ✅ Enable the test button after password generation
+            test_button.config(state=tk.NORMAL)
+            compare_button.config(state=tk.DISABLED)  # Keep compare button disabled until tests are run
 
-            # ✅ Run security tests automatically
-            run_security_tests()
 
         else:
             print("❌ Error: Failed to generate password.")
@@ -138,20 +137,36 @@ def on_generate():
         print("❌ Error: Audio capture failed.")
         result_label.config(text="❌ Error in capturing audio!")
 
-# Update these functions in gui.py
+
+# Add a flag to prevent double execution of security tests
+
+security_tests_in_progress = False
 
 def run_security_tests():
-    """Automatically runs all security tests after password generation."""
-    global generated_password, test_results
+    """Runs all security tests after password generation."""
+    global generated_password, test_results, security_tests_in_progress
+
+    # If already processing, ignore the second call
+    if security_tests_in_progress:
+        print("⚠️ Security tests already in progress, ignoring duplicate call")
+        return
+        
+    # Set flag to indicate tests are running
+    security_tests_in_progress = True
 
     if not generated_password:
-        messagebox.showerror("Error", "No password available to test.")
+        messagebox.showerror("Error", "No password available to test. Generate a password first.")
+        security_tests_in_progress = False  # Reset flag before returning
         return
 
     if "Traditional_Passwords" not in test_results:
          test_results["Traditional_Passwords"] = []
 
     print("🔍 Running security tests...")
+    result_label.config(text="🔍 Running security tests... This may take a few moments.")
+    
+    # Update UI to indicate tests are running
+    test_button.config(state=tk.DISABLED)
 
     # ✅ Claude AI Password Guessing Test
     try:
@@ -202,8 +217,6 @@ def run_security_tests():
     
     time.sleep(1)
     
-    # Update this part of the run_security_tests function in gui.py
-
     # ✅ NEW: Hashcat MD5 Test
     try:
         # Hash the password with MD5 for Hashcat testing
@@ -276,9 +289,14 @@ def run_security_tests():
     # ✅ Log results
     log_test_results()
 
-    # ✅ Enable "Compare AI Results" button after tests complete
-    compare_button.config(state=tk.NORMAL)
-
+    # ✅ Update UI after tests complete
+    result_label.config(text=f"🔐 AI Password: {generated_password}\n✅ Security tests completed. Click 'Compare AI Results' to view details.")
+    test_button.config(state=tk.NORMAL)  # Re-enable the test button
+    compare_button.config(state=tk.NORMAL)  # Enable the compare button after tests complete
+    
+    # Reset the flag when tests are complete
+    security_tests_in_progress = False
+    
 def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
@@ -589,6 +607,7 @@ def compare_ai_results():
 ### ✅ UI BUTTON HANDLING
 def disable_buttons():
     """Disables test button during automated testing."""
+    test_button.config(state=tk.DISABLED)
     compare_button.config(state=tk.DISABLED)
 
 # ✅ GUI SETUP
@@ -596,6 +615,11 @@ app = tk.Tk()
 app.title("Secure AI Password Generator")
 app.geometry("600x500")
 app.configure(bg="#282c34")
+
+
+# Initialize global state flags
+password_generation_in_progress = False
+security_tests_in_progress = False
 
 # Custom style for buttons
 style = ttk.Style()
@@ -605,8 +629,41 @@ style.map("TButton", background=[("active", "#61dafb")])
 header_label = tk.Label(app, text="Vocal-Based Password Generator", font=("Helvetica", 18, "bold"), fg="#61dafb", bg="#282c34")
 header_label.pack(pady=20)
 
-generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=on_generate)
+# Add a flag to prevent double execution
+password_generation_in_progress = False
+
+def safe_on_generate():
+
+    """Wrapper for on_generate to prevent double execution"""
+
+    global password_generation_in_progress
+    # If already processing, ignore the second call
+    if password_generation_in_progress:
+        print("⚠️ Generation already in progress, ignoring duplicate call")
+        return     
+
+    try:
+
+        # Set flag to indicate processing is happening
+        password_generation_in_progress = True
+
+        # Disable button during generation to prevent multiple clicks
+        generate_button.config(state=tk.DISABLED)
+        # Call the actual function
+        on_generate()
+
+    finally:
+
+        # Reset flag when done (even if there was an error)
+        password_generation_in_progress = False
+        # Re-enable button
+        generate_button.config(state=tk.NORMAL)
+
+generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=safe_on_generate)
 generate_button.pack(pady=10)
+
+test_button = ttk.Button(app, text="Run Security Tests", style="TButton", state=tk.DISABLED, command=run_security_tests)
+test_button.pack(pady=5)
 
 compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)

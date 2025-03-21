@@ -1,1 +1,1 @@
-test passphrase
+generator 126
