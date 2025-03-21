@@ -54,17 +54,18 @@ def save_hashed_password(password):
     HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
     try:
+        # Append to the file (keeps history of all passwords)
         with open(HASHED_PASSWORD_FILE, "a", encoding="utf-8") as f:  
-            f.write(hashed_password + "\n")  
+            f.write(hashed_password + "\n")
         
         print(f"✅ Hashed password saved successfully at {HASHED_PASSWORD_FILE}")
 
     except Exception as e:
         print(f"❌ Error saving hashed password: {e}")
 
-    # ✅ Store hashed password in `test_results`
+    # Store hashed password in `test_results`
     global test_results
-    test_results["hashed_password"] = hashed_password  # ✅ FIXED: Now it will be logged
+    test_results["hashed_password"] = hashed_password
 
     print(f"✅ Hashed AI Password: {hashed_password}")
     return hashed_password
@@ -296,7 +297,7 @@ def run_security_tests():
     
     # Reset the flag when tests are complete
     security_tests_in_progress = False
-    
+
 def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
@@ -460,7 +461,12 @@ def on_login():
                 print("✅ Passphrase matched! Now verifying AI-generated password...")
                 user_entered_password = simpledialog.askstring("Password Required", "Enter the AI-generated password:")
                 
-                # ✅ Correct file path for hashed password
+                if not user_entered_password:
+                    print("Password entry canceled")
+                    result_label.config(text="❌ Password entry canceled.")
+                    return
+                
+                # Correct file path for hashed password
                 HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
 
                 # Check existence clearly
@@ -469,18 +475,32 @@ def on_login():
                     result_label.config(text="❌ Missing hashed password file.")
                     return
                 
-                # ✅ Load the stored hashed password
-                with open(HASHED_PASSWORD_FILE, "r") as f:
-                    stored_hashed_password = f.read().strip()
-                # ✅ Hash the user-entered password before comparison
-                user_hashed_password = hashlib.sha256(user_entered_password.encode()).hexdigest()
+                try:
+                    # Load the stored hashed password(s)
+                    with open(HASHED_PASSWORD_FILE, "r") as f:
+                        # Read all hashed passwords from the file (there may be multiple)
+                        stored_hashed_passwords = [line.strip() for line in f.readlines() if line.strip()]
+                    
+                    if not stored_hashed_passwords:
+                        print("❌ Error: No stored hashed passwords found in file")
+                        result_label.config(text="❌ No stored passwords found. Please generate a password first.")
+                        return
+                    
+                    # Get the most recent hashed password (last one in the file)
+                    most_recent_hash = stored_hashed_passwords[-1]
+                    
+                    # Hash the user-entered password before comparison
+                    user_hashed_password = hashlib.sha256(user_entered_password.encode()).hexdigest()
 
-                if user_hashed_password == stored_hashed_password:
-                    print("✅ Access Granted! 🎉")
-                    result_label.config(text="✅ Access Granted! 🎉")
-                else:
-                    print("❌ Incorrect AI-generated password. Access Denied.")
-                    result_label.config(text="❌ Incorrect AI-generated password.")
+                    if user_hashed_password == most_recent_hash:
+                        print("✅ Access Granted! 🎉")
+                        result_label.config(text="✅ Access Granted! 🎉")
+                    else:
+                        print("❌ Incorrect AI-generated password. Access Denied.")
+                        result_label.config(text="❌ Incorrect AI-generated password.")
+                except Exception as e:
+                    print(f"❌ Error during password verification: {e}")
+                    result_label.config(text=f"❌ Error: {str(e)}")
             else:
                 print("❌ Incorrect passphrase. Access Denied.")
                 result_label.config(text="❌ Incorrect passphrase.")
@@ -489,8 +509,7 @@ def on_login():
             result_label.config(text="❌ Access Denied! Voice does not match.")
     else:
         print("❌ Error: Audio capture failed.")
-        result_label.config(text="❌ Error in capturing audio!")
-
+        result_label.config(text="❌ Error in capturing audio!")       
 def compare_ai_results():
     """Opens a new window to display AI vs Traditional Password Comparison."""
     log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
