@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import os
 import sys
-from unittest.mock import patch, mock_open
+from unittest.mock import patch, mock_open,MagicMock
 
 # Add project root to path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -229,19 +229,27 @@ class TestVoiceAuth(unittest.TestCase):
     @patch('speech_recognition.Recognizer.record')
     def test_recognize_speech_success(self, mock_record, mock_audio_file, mock_recognize):
         """Test speech recognition when successful"""
-        from vocal_passwords.voice_auth import recognize_speech
-        
-        # Setup mocks
-        mock_recognize.return_value = "my secure passphrase"
-        
-        # Call the function
-        result = recognize_speech("vocal_input.wav")
-        
-        # Check result
-        self.assertEqual(result, "my secure passphrase")
-        mock_audio_file.assert_called_once_with("vocal_input.wav")
-        mock_record.assert_called_once()
-        mock_recognize.assert_called_once()
+        # We need to patch the right way - at the module level
+        with patch('vocal_passwords.voice_auth.sr.Recognizer') as mock_recognizer_class:
+            # Create a mock recognizer instance
+            mock_recognizer_instance = MagicMock()
+            mock_recognizer_class.return_value = mock_recognizer_instance
+            
+            # Set up the mock chain for recognize_google
+            mock_recognizer_instance.recognize_google.return_value = "my secure passphrase"
+            
+            # Import here to ensure patches take effect
+            from vocal_passwords.voice_auth import recognize_speech
+            
+            # Call the function
+            result = recognize_speech("vocal_input.wav")
+            
+            # Check result
+            self.assertEqual(result, "my secure passphrase")
+            
+            # Verify mocks were called
+            mock_audio_file.assert_called_once_with("vocal_input.wav")
+            mock_recognizer_instance.recognize_google.assert_called_once()
 
 if __name__ == "__main__":
     unittest.main()
