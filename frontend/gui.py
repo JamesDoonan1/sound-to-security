@@ -123,7 +123,7 @@ def on_generate():
                 print("❌ ERROR: Hashed password file was not created!")
 
                         # ✅ Update UI
-            result_label.config(text=f"🔐 AI Password: {generated_password}\n🔐 Traditional Passwords: {', '.join(traditional_passwords)}\n\n🔍 Password generated successfully! Click 'Run Security Tests' to evaluate.")
+            result_label.config(text=f"🔐 AI Password: {generated_password}\n\n🔍 Password generated successfully! Click 'Run Security Tests' to evaluate.")
 
             # ✅ Enable the test button after password generation
             test_button.config(state=tk.NORMAL)
