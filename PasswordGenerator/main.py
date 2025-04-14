@@ -9,11 +9,13 @@ from symmetric_key_generation import derive_key_from_hash
 from encrypt_decrypt_password import encrypt_password, decrypt_password
 from database_control import initialize_db, store_encrypted_password, get_encrypted_password
 
+# Set a default username (this could later be obtained from user input)
+USERNAME = "default_user"
+
 AUDIO_FOLDER_PATH = "/media/sf_VM_Shared_Folder/Audio Files"
 OUTPUT_JSON_FILE = "/home/cormacgeraghty/Desktop/Project Code/audio_data.json"
 
 print(f"JSON file being used: {os.path.abspath(OUTPUT_JSON_FILE)}")
-
 
 # Load existing JSON data to count processed files
 if os.path.exists(OUTPUT_JSON_FILE):
@@ -74,16 +76,18 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
         key = derive_key_from_hash(audio_hash)
 
         # 4) Check if there's an existing password in DB
-        encrypted_pw = get_encrypted_password(audio_hash)
-        if encrypted_pw:
-            password = decrypt_password(encrypted_pw, key)
-            print(f"Retrieved stored password: {password}")
+        existing_record = get_encrypted_password(audio_hash)  # Now returns a tuple (username, encrypted_password) or (None, None)
+        if existing_record and existing_record[1]:
+            stored_username, stored_encrypted_pw = existing_record
+            password = decrypt_password(stored_encrypted_pw, key)
+            print(f"Retrieved stored password for user {stored_username}: {password}")
         else:
             password = password_gen.generate_password(features)
             if password:
                 encrypted_pw = encrypt_password(password, key)
-                store_encrypted_password(audio_hash, encrypted_pw)
-                print(f"Generated new password: {password}")
+                # Store the record along with the username
+                store_encrypted_password(audio_hash, USERNAME, encrypted_pw)
+                print(f"Generated new password for user {USERNAME}: {password}")
             else:
                 print("Failed to generate password.")
                 password = None
@@ -94,7 +98,7 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
             for k, v in features.items()
         }
 
-        # 6) Build a record with only the needed info
+        # 6) Build a record with only the needed info (the JSON output remains unchanged)
         audio_entry = {
             "features": summarized_features, 
             "hash": audio_hash,
@@ -103,16 +107,12 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
 
         audio_data_list.append(audio_entry)
 
-        # Debugging: Print before writing
-        # print(f"Current data list before saving: {json.dumps(audio_data_list, indent=4)}")
-
         # Save JSON immediately after each file
         with open(OUTPUT_JSON_FILE, "w") as f:
             json.dump(audio_data_list, f, indent=4)
             f.flush()  # Ensure data is written immediately
             os.fsync(f.fileno())  # Force the OS to write the file
 
-        # print(f"Updated JSON after processing {file_name}.")
         print(json.dumps(audio_entry, indent=4))
 
     except Exception as e:
