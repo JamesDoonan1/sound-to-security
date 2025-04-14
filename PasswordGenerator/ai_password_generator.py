@@ -3,6 +3,8 @@ import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from audio_feature_extraction import extract_features  # Ensure correct import
+
 # Load API key from environment variables
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -86,8 +88,8 @@ class AIPasswordGenerator:
                     {"role": "system", "content": "You are a password generation assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.7,  # Allows more variation
-                top_p=0.9,  # Encourages creative output while staying relevant to prompt rules
+                temperature=0.7,
+                top_p=0.9,
                 frequency_penalty=0,
                 presence_penalty=0
             )
