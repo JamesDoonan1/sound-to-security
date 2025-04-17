@@ -1,0 +1,291 @@
+{
+  "system_info": {
+    "os": "Windows 10",
+    "processor": "Intel64 Family 6 Model 142 Stepping 9, GenuineIntel",
+    "hostname": "DI13-5378",
+    "python_version": "3.12.2"
+  },
+  "test_start_time": "2025-04-16 22:16:04",
+  "benchmark_metrics": {
+    "weak1": {
+      "password": "password123",
+      "hash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "metrics": {
+        "length": 11,
+        "has_lowercase": true,
+        "has_uppercase": false,
+        "has_digits": true,
+        "has_special": false,
+        "charset_size": 36,
+        "entropy_bits": 56.86917501586544,
+        "crack_estimates": {
+          "combinations": 131621703842267136,
+          "seconds": 131621703.84226714,
+          "minutes": 2193695.064037786,
+          "hours": 36561.58440062976,
+          "days": 1523.3993500262402,
+          "years": 4.170840109585873
+        }
+      }
+    },
+    "weak2": {
+      "password": "123456",
+      "hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "metrics": {
+        "length": 6,
+        "has_lowercase": false,
+        "has_uppercase": false,
+        "has_digits": true,
+        "has_special": false,
+        "charset_size": 10,
+        "entropy_bits": 19.931568569324174,
+        "crack_estimates": {
+          "combinations": 1000000,
+          "seconds": 0.001,
+          "minutes": 1.6666666666666667e-05,
+          "hours": 2.777777777777778e-07,
+          "days": 1.1574074074074076e-08,
+          "years": 3.1688087814028955e-11
+        }
+      }
+    },
+    "medium1": {
+      "password": "P@ssw0rd!",
+      "hash": "0e44ce7308af2b3de5232e4616403ce7d49ba2aec83f79c196409556422a4927",
+      "metrics": {
+        "length": 9,
+        "has_lowercase": true,
+        "has_uppercase": true,
+        "has_digits": true,
+        "has_special": true,
+        "charset_size": 95,
+        "entropy_bits": 59.12870047497853,
+        "crack_estimates": {
+          "combinations": 630249409724609375,
+          "seconds": 630249409.7246094,
+          "minutes": 10504156.82874349,
+          "hours": 175069.28047905816,
+          "days": 7294.55335329409,
+          "years": 19.971398640093334
+        }
+      }
+    },
+    "medium2": {
+      "password": "Summer2021!",
+      "hash": "9a741ef50ae1a345e1990144b51b02525feba74042657df07be2e9d5e709b301",
+      "metrics": {
+        "length": 11,
+        "has_lowercase": true,
+        "has_uppercase": true,
+        "has_digits": true,
+        "has_special": true,
+        "charset_size": 95,
+        "entropy_bits": 72.26841169164042,
+        "crack_estimates": {
+          "combinations": 5688000922764599609375,
+          "seconds": 5688000922764.6,
+          "minutes": 94800015379.40999,
+          "hours": 1580000256.3235,
+          "days": 65833344.013479166,
+          "years": 180241.87272684235
+        }
+      }
+    },
+    "strong1": {
+      "password": "xT5$9pL#2qR@7",
+      "hash": "17eb4f75225398214fb2d57894f08a06a86185dd9e66e8663e9c50a81d4d0dc3",
+      "metrics": {
+        "length": 13,
+        "has_lowercase": true,
+        "has_uppercase": true,
+        "has_digits": true,
+        "has_special": true,
+        "charset_size": 95,
+        "entropy_bits": 85.40812290830232,
+        "crack_estimates": {
+          "combinations": 51334208327950511474609375,
+          "seconds": 5.133420832795051e+16,
+          "minutes": 855570138799175.2,
+          "hours": 14259502313319.588,
+          "days": 594145929721.6495,
+          "years": 1626682901.3597524
+        }
+      }
+    },
+    "very_strong": {
+      "password": "K8^p2L!9@xR4*tN7#mQ6",
+      "hash": "6885cf8c7dc806ae95cc6059f939435a3ccf2da9724f12cafb6430d429b61105",
+      "metrics": {
+        "length": 20,
+        "has_lowercase": true,
+        "has_uppercase": true,
+        "has_digits": true,
+        "has_special": true,
+        "charset_size": 95,
+        "entropy_bits": 131.39711216661897,
+        "crack_estimates": {
+          "combinations": 3584859224085422343574104404449462890625,
+          "seconds": 3.5848592240854223e+30,
+          "minutes": 5.9747653734757035e+28,
+          "hours": 9.957942289126173e+26,
+          "days": 4.149142620469239e+25,
+          "years": 1.1359733389375055e+23
+        }
+      }
+    }
+  },
+  "hash_results": {},
+  "summary": {
+    "total_hashes": 20,
+    "cracked_hashes": 0,
+    "attack_stats": {
+      "Basic Dictionary Attack": {
+        "tested": 20,
+        "cracked": 0,
+        "success_rate": 0.0
+      },
+      "Enhanced Dictionary Attack": {
+        "tested": 20,
+        "cracked": 0,
+        "success_rate": 0.0
+      },
+      "Simple Mask Attack": {
+        "tested": 20,
+        "cracked": 0,
+        "success_rate": 0.0
+      },
+      "Complex Pattern Attack": {
+        "tested": 20,
+        "cracked": 0,
+        "success_rate": 0.0
+      }
+    }
+  },
+  "test_results": {
+    "test1": {
+      "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "attack": "Basic Dictionary Attack",
+      "start_time": "2025-04-16 22:16:10",
+      "elapsed_seconds": 0.01002192497253418,
+      "cracked": true,
+      "timeout": 30,
+      "recovered_password": "password",
+      "message": "Cracked: password"
+    },
+    "test2": {
+      "hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+      "attack": "Basic Dictionary Attack",
+      "start_time": "2025-04-16 22:16:15",
+      "elapsed_seconds": 0.008106231689453125,
+      "cracked": true,
+      "timeout": 30,
+      "recovered_password": "123456",
+      "message": "Cracked: 123456"
+    },
+    "test3": {
+      "hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+      "attack": "Basic Dictionary Attack",
+      "start_time": "2025-04-16 22:16:20",
+      "elapsed_seconds": 0.20900511741638184,
+      "cracked": false,
+      "timeout": 30,
+      "error": "Not cracked after trying 49996 passwords",
+      "message": "Not cracked after trying 49996 passwords"
+    },
+    "test4": {
+      "hash": "65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5",
+      "attack": "Basic Dictionary Attack",
+      "start_time": "2025-04-16 22:16:25",
+      "elapsed_seconds": 0.0020487308502197266,
+      "cracked": true,
+      "timeout": 30,
+      "recovered_password": "qwerty",
+      "message": "Cracked: qwerty"
+    },
+    "test5": {
+      "hash": "1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032",
+      "attack": "Basic Dictionary Attack",
+      "start_time": "2025-04-16 22:16:30",
+      "elapsed_seconds": 0.01630687713623047,
+      "cracked": true,
+      "timeout": 30,
+      "recovered_password": "letmein",
+      "message": "Cracked: letmein"
+    }
+  },
+  "benchmark_results": {
+    "weak1": [
+      {
+        "hash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:03",
+        "elapsed_seconds": 0.02208685874938965,
+        "cracked": true,
+        "timeout": 30,
+        "recovered_password": "password123",
+        "message": "Cracked: password123"
+      }
+    ],
+    "weak2": [
+      {
+        "hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:09",
+        "elapsed_seconds": 0.01008749008178711,
+        "cracked": true,
+        "timeout": 30,
+        "recovered_password": "123456",
+        "message": "Cracked: 123456"
+      }
+    ],
+    "medium1": [
+      {
+        "hash": "0e44ce7308af2b3de5232e4616403ce7d49ba2aec83f79c196409556422a4927",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:15",
+        "elapsed_seconds": 0.12371373176574707,
+        "cracked": true,
+        "timeout": 30,
+        "recovered_password": "P@ssw0rd!",
+        "message": "Cracked: P@ssw0rd!"
+      }
+    ],
+    "medium2": [
+      {
+        "hash": "9a741ef50ae1a345e1990144b51b02525feba74042657df07be2e9d5e709b301",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:20",
+        "elapsed_seconds": 0.20037150382995605,
+        "cracked": false,
+        "timeout": 30,
+        "error": "Not cracked after trying 49996 passwords",
+        "message": "Not cracked after trying 49996 passwords"
+      }
+    ],
+    "strong1": [
+      {
+        "hash": "17eb4f75225398214fb2d57894f08a06a86185dd9e66e8663e9c50a81d4d0dc3",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:28",
+        "elapsed_seconds": 0.15500211715698242,
+        "cracked": false,
+        "timeout": 30,
+        "error": "Not cracked after trying 49996 passwords",
+        "message": "Not cracked after trying 49996 passwords"
+      }
+    ],
+    "very_strong": [
+      {
+        "hash": "6885cf8c7dc806ae95cc6059f939435a3ccf2da9724f12cafb6430d429b61105",
+        "attack": "Basic Dictionary Attack",
+        "start_time": "2025-04-16 22:20:36",
+        "elapsed_seconds": 0.3471999168395996,
+        "cracked": false,
+        "timeout": 30,
+        "error": "Not cracked after trying 49996 passwords",
+        "message": "Not cracked after trying 49996 passwords"
+      }
+    ]
+  },
+  "test_end_time": "2025-04-16 22:20:36"
+}

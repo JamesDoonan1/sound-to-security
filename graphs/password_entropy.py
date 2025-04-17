@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Password categories and their entropy values from your results
+# Password categories and their entropy values from results
 categories = ['Weak1\n(password123)', 'Weak2\n(123456)', 'Medium1\n(P@ssw0rd!)', 
               'Medium2\n(Summer2021!)', 'Strong1\n(xT5$9pL#2qR@7)', 
               'Very Strong\n(K8^p2L!...)', 'AI-Generated\n(Average)']

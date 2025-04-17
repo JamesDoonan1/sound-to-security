@@ -18,12 +18,11 @@ def find_hashcat_path():
     
     for path in possible_paths:
         if os.path.exists(path):
-            print(f"✅ Found Hashcat at: {path}")
             return path
     
     # If we can't find it, return the original path as fallback
     default_path = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
-    print(f"⚠️ Hashcat not found in common locations. Using default: {default_path}")
+    print(f" Hashcat not found in common locations. Using default: {default_path}")
     return default_path
 
 # Updated path settings
@@ -41,7 +40,7 @@ def save_hash(password_hash):
     # Save to a temporary file so we don't overwrite the existing password file
     with open(TEMP_HASH_FILE, "w") as f:
         f.write(password_hash + "\n")
-    print(f"✅ Hash saved to: {TEMP_HASH_FILE}")
+    print(f" Hash saved to: {TEMP_HASH_FILE}")
     return TEMP_HASH_FILE
 
 def crack_password_with_hashcat(hash_type="0", attack_mode="3", password_hash=None):
@@ -63,17 +62,17 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3", password_hash=No
         hash_file_to_use = save_hash(password_hash)
     elif not os.path.exists(TEMP_HASH_FILE):
         # If no specific hash provided and temp file doesn't exist, create it
-        return False, "❌ No hash provided and no temp hash file found!"
+        return False, " No hash provided and no temp hash file found!"
 
     if not os.path.exists(HASHCAT_PATH):
-        return False, f"❌ Hashcat executable not found at {HASHCAT_PATH}!"
+        return False, f" Hashcat executable not found at {HASHCAT_PATH}!"
 
     # Create wordlist file if it doesn't exist and using dictionary attack
     if attack_mode == "0" and not os.path.exists(WORDLIST_FILE):
         with open(WORDLIST_FILE, "w") as f:
             # Add some common passwords for testing
             f.write("password\n123456\nadmin\nwelcome\nqwerty\n12345678\nabc123\npassword1\n")
-        print(f"✅ Created basic wordlist at: {WORDLIST_FILE}")
+        print(f" Created basic wordlist at: {WORDLIST_FILE}")
 
     # Hashcat command
     command = [
@@ -86,12 +85,12 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3", password_hash=No
         "--show"  # Shows cracked passwords
     ]
 
-    print(f"🔨 Running Hashcat command: {' '.join(command)}")
+    print(f" Running Hashcat command: {' '.join(command)}")
 
     try:
         # First, run without --show to crack the password
         crack_command = command[:-1]  # Remove --show for the actual cracking
-        print(f"🔨 Running Hashcat crack: {' '.join(crack_command)}")
+        print(f" Running Hashcat crack: {' '.join(crack_command)}")
         
         # Set a timeout for the cracking process (30 seconds)
         crack_result = subprocess.run(
@@ -104,26 +103,22 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3", password_hash=No
         # Then check if password was cracked
         check_result = subprocess.run(command, capture_output=True, text=True)
         
-        # Debugging output
-        print(f"Hashcat STDOUT: {check_result.stdout}")
-        print(f"Hashcat STDERR: {check_result.stderr}")
-        
         # Check if password was cracked
         if check_result.returncode == 0 and check_result.stdout.strip():
             cracked_password = check_result.stdout.strip().split(":")[-1]  # Extract password
             return True, cracked_password
         else:
-            return False, "❌ Password not cracked within the time limit or hash type not supported!"
+            return False, " Password not cracked within the time limit or hash type not supported!"
     
     except subprocess.TimeoutExpired:
-        return False, "⏱️ Hashcat cracking timed out (30s limit)"
+        return False, " Hashcat cracking timed out (30s limit)"
     except Exception as e:
-        return False, f"❌ Error running Hashcat: {str(e)}"
+        return False, f" Error running Hashcat: {str(e)}"
     finally:
         # Clean up temporary hash file
         if os.path.exists(TEMP_HASH_FILE):
             try:
                 os.remove(TEMP_HASH_FILE)
-                print(f"✅ Removed temporary hash file: {TEMP_HASH_FILE}")
+                print(f" Removed temporary hash file: {TEMP_HASH_FILE}")
             except:
                 pass

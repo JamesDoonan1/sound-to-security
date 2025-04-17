@@ -13,7 +13,7 @@ from vocal_passwords.voice_auth import recognize_speech, save_passphrase, save_v
 
 # Paths for stored data
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)  # moves up to 'sound-to-security'
+ROOT_DIR = os.path.dirname(BASE_DIR)  
 DATA_DIR = os.path.join(ROOT_DIR, "backend", "data")
 LOGS_DIR = os.path.join(ROOT_DIR, "backend", "logs")
 
@@ -29,7 +29,7 @@ PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
 generated_password = None  
 test_results = {}  # Stores test results for comparison
 
-### ✅ PASSWORD HANDLING FUNCTIONS
+###  PASSWORD HANDLING FUNCTIONS
 def save_password(password):
     """Save the AI-generated password for login verification."""
     with open(PASSWORD_FILE, "w") as f:
@@ -45,7 +45,7 @@ def load_password():
 def save_hashed_password(password):
     """Hashes and stores the password securely."""
     if not password:
-        print("❌ Error: Cannot hash a NoneType password.")
+        print(" Error: Cannot hash a NoneType password.")
         return None
 
     hashed_password = hashlib.sha256(password.encode()).hexdigest()
@@ -58,19 +58,19 @@ def save_hashed_password(password):
         with open(HASHED_PASSWORD_FILE, "a", encoding="utf-8") as f:  
             f.write(hashed_password + "\n")
         
-        print(f"✅ Hashed password saved successfully at {HASHED_PASSWORD_FILE}")
+        print(f" Hashed password saved successfully at {HASHED_PASSWORD_FILE}")
 
     except Exception as e:
-        print(f"❌ Error saving hashed password: {e}")
+        print(f" Error saving hashed password: {e}")
 
     # Store hashed password in `test_results`
     global test_results
     test_results["hashed_password"] = hashed_password
 
-    print(f"✅ Hashed AI Password: {hashed_password}")
+    print(f" Hashed AI Password: {hashed_password}")
     return hashed_password
 
-### ✅ PASSWORD GENERATION HANDLER
+###  PASSWORD GENERATION HANDLER
 def on_generate():
     """Handles AI password generation and comparison with traditional passwords."""
     global generated_password  
@@ -82,14 +82,14 @@ def on_generate():
         print("Step 2: Extracting voice features...")
         features = extract_audio_features(audio, sr)
 
-        print("Step 3: Recognizing spoken passphrase...")
+        print("Step 3: Recognising spoken passphrase...")
         passphrase = recognize_speech("vocal_input.wav")
 
         if not passphrase:
             messagebox.showerror("Error", "Could not detect a passphrase. Try again.")
             return
 
-        print(f"Recognized Passphrase: {passphrase}")
+        print(f"Recognised Passphrase: {passphrase}")
         test_results["passphrase"] = passphrase
 
         print("Step 4: Saving voiceprint & passphrase...")
@@ -103,40 +103,33 @@ def on_generate():
         if response.status_code == 200:
             data = response.json()
             
-            # ✅ Extract AI and Traditional passwords from response
+            #  Extract AI and Traditional passwords from response
             generated_password = data.get("ai_password", "N/A")
             traditional_passwords = data.get("traditional_passwords", [])
 
-            print(f"✅ Generated AI Password: {generated_password}")
-            print(f"✅ Traditional Passwords: {', '.join(traditional_passwords)}")
-            # ✅ Ensure Traditional Passwords are stored in test_results
+            print(f" Generated AI Password: {generated_password}")
+            print(f" Traditional Passwords: {', '.join(traditional_passwords)}")
+            #  Ensure Traditional Passwords are stored in test_results
             test_results["Traditional_Passwords"] = traditional_passwords if traditional_passwords else ["N/A"]
             
             hashed_password = save_hashed_password(generated_password)
-            test_results["hashed_password"] = hashed_password  # ✅ Store in test results
+            test_results["hashed_password"] = hashed_password  #  Store in test results
 
-            # ✅ Debugging: Check if the file was created
-            HASHED_PASSWORD_FILE = os.path.join(DATA_DIR, "hashed_password.txt")
-            if os.path.exists(HASHED_PASSWORD_FILE):
-                print(f"🟢 DEBUG: Hashed password file exists at {HASHED_PASSWORD_FILE}")
-            else:
-                print("❌ ERROR: Hashed password file was not created!")
+                        #  Update UI
+            result_label.config(text=f" AI Password: {generated_password}\n\n Password generated successfully! Click 'Run Security Tests' to evaluate.")
 
-                        # ✅ Update UI
-            result_label.config(text=f"🔐 AI Password: {generated_password}\n\n🔍 Password generated successfully! Click 'Run Security Tests' to evaluate.")
-
-            # ✅ Enable the test button after password generation
+            #  Enable the test button after password generation
             test_button.config(state=tk.NORMAL)
             compare_button.config(state=tk.DISABLED)  # Keep compare button disabled until tests are run
 
 
         else:
-            print("❌ Error: Failed to generate password.")
-            result_label.config(text="❌ Error generating password!")
+            print(" Error: Failed to generate password.")
+            result_label.config(text=" Error generating password!")
 
     else:
-        print("❌ Error: Audio capture failed.")
-        result_label.config(text="❌ Error in capturing audio!")
+        print(" Error: Audio capture failed.")
+        result_label.config(text=" Error in capturing audio!")
 
 
 # Add a flag to prevent double execution of security tests
@@ -149,7 +142,7 @@ def run_security_tests():
 
     # If already processing, ignore the second call
     if security_tests_in_progress:
-        print("⚠️ Security tests already in progress, ignoring duplicate call")
+        print(" Security tests already in progress, ignoring duplicate call")
         return
         
     # Set flag to indicate tests are running
@@ -163,13 +156,13 @@ def run_security_tests():
     if "Traditional_Passwords" not in test_results:
          test_results["Traditional_Passwords"] = []
 
-    print("🔍 Running security tests...")
+    print(" Running security tests...")
     result_label.config(text="🔍 Running security tests... This may take a few moments.")
     
     # Update UI to indicate tests are running
     test_button.config(state=tk.DISABLED)
 
-    # ✅ Claude AI Password Guessing Test
+    #  Claude AI Password Guessing Test
     try:
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "claude"})
         response.raise_for_status()
@@ -178,20 +171,20 @@ def run_security_tests():
             "cracked": response_data.get("cracked", "N/A"),
             "time": response_data.get("time", "N/A"),
             "response": response_data.get("message", "No response from Claude."),
-            "attempts": ", ".join(response_data.get("attempts", []))  # ✅ Log Claude's password guesses
+            "attempts": ", ".join(response_data.get("attempts", []))  #  Log Claude's password guesses
         }
     except requests.RequestException:
         test_results["Claude"] = {"cracked": "Error", "time": "N/A", "response": "Error retrieving response.", "attempts": "N/A"}
 
     time.sleep(1)
 
-    # ✅ GPT-4 Password Guessing Test 
+    #  GPT-4 Password Guessing Test 
     try:
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "gpt"})
         response.raise_for_status()
         response_data = response.json()
 
-        # ✅ Explicitly store and format attempted passwords
+        #  Explicitly store and format attempted passwords
         gpt_attempts = response_data.get("attempts", [])
         if not gpt_attempts or not isinstance(gpt_attempts, list):
             gpt_attempts = ["No attempts generated"]
@@ -199,16 +192,16 @@ def run_security_tests():
         test_results["GPT"] = {
             "cracked": response_data.get("cracked", "N/A"),
             "time": response_data.get("time", "N/A"),
-            "attempts": gpt_attempts  # ✅ Ensure it is always a list
+            "attempts": gpt_attempts  #  Ensure it is always a list
         }
 
     except requests.RequestException as e:
-        print(f"❌ GPT Testing Error: {e}")
+        print(f" GPT Testing Error: {e}")
         test_results["GPT"] = {"cracked": "Error", "time": "N/A", "attempts": ["Error retrieving attempts."]}
 
     time.sleep(1)
 
-    # ✅ Brute-Force Test
+    #  Brute-Force Test
     try:
         response = requests.post("http://127.0.0.1:5000/api/test-password", json={"password": generated_password, "test_type": "brute"})
         response.raise_for_status()
@@ -218,7 +211,7 @@ def run_security_tests():
     
     time.sleep(1)
     
-    # ✅ NEW: Hashcat MD5 Test
+    #  Hashcat MD5 Test
     try:
         # Hash the password with MD5 for Hashcat testing
         password_hash = hashlib.md5(generated_password.encode()).hexdigest()
@@ -242,10 +235,10 @@ def run_security_tests():
             "hash": password_hash
         }
         
-        print(f"✅ Hashcat MD5 Test Result: {hashcat_result}")
+        print(f" Hashcat MD5 Test Result: {hashcat_result}")
         
     except requests.RequestException as e:
-        print(f"❌ Hashcat Testing Error: {e}")
+        print(f" Hashcat Testing Error: {e}")
         test_results["Hashcat_MD5"] = {
             "cracked": "Error", 
             "result": f"Error: {str(e)}", 
@@ -254,7 +247,7 @@ def run_security_tests():
 
     time.sleep(1)
 
-    # ✅ NEW: Hashcat SHA-256 Test
+    #  Hashcat SHA-256 Test
     try:
         # Also test with SHA-256
         password_hash = hashlib.sha256(generated_password.encode()).hexdigest()
@@ -277,21 +270,21 @@ def run_security_tests():
             "hash": password_hash
         }
         
-        print(f"✅ Hashcat SHA-256 Test Result: {hashcat_result}")
+        print(f" Hashcat SHA-256 Test Result: {hashcat_result}")
         
     except requests.RequestException as e:
-        print(f"❌ Hashcat SHA-256 Testing Error: {e}")
+        print(f" Hashcat SHA-256 Testing Error: {e}")
         test_results["Hashcat_SHA256"] = {
             "cracked": "Error", 
             "result": f"Error: {str(e)}", 
             "hash": hashlib.sha256(generated_password.encode()).hexdigest()
         }
 
-    # ✅ Log results
+    #  Log results
     log_test_results()
 
-    # ✅ Update UI after tests complete
-    result_label.config(text=f"🔐 AI Password: {generated_password}\n✅ Security tests completed. Click 'Compare AI Results' to view details.")
+    #  Update UI after tests complete
+    result_label.config(text=f" AI Password: {generated_password}\n Security tests completed. Click 'Compare AI Results' to view details.")
     test_button.config(state=tk.NORMAL)  # Re-enable the test button
     compare_button.config(state=tk.NORMAL)  # Enable the compare button after tests complete
     
@@ -302,21 +295,21 @@ def log_test_results():
     """Logs AI password, passphrase, security test results, and traditional passwords to CSV file."""
     global test_results, generated_password
 
-    # ✅ Ensure hashed password exists in `test_results`
+    #  Ensure hashed password exists in `test_results`
     if "hashed_password" not in test_results or not test_results["hashed_password"]:
-        print("⚠️ WARNING: Hashed password missing from test_results! Setting to N/A.")
+        print(" WARNING: Hashed password missing from test_results! Setting to N/A.")
         test_results["hashed_password"] = "N/A"
 
-    # ✅ Ensure the logs directory exists
+    #  Ensure the logs directory exists
     os.makedirs(LOGS_DIR, exist_ok=True)
 
     if test_results.get("passphrase") in ["UNKNOWN_PHRASE", "ERROR", None, "N/A"]:
         test_results["passphrase"] = load_passphrase()
 
-    # ✅ Ensure GPT test results are stored properly
+    #  Ensure GPT test results are stored properly
     test_results["GPT"] = test_results.get("GPT", {})
 
-    # ✅ Retrieve and format Traditional Passwords correctly
+    #  Retrieve and format Traditional Passwords correctly
     traditional_passwords_list = test_results.get("Traditional_Passwords", [])
 
     # If missing, extract from 'comparison'
@@ -328,7 +321,7 @@ def log_test_results():
     # Convert to string format
     traditional_passwords_str = "; ".join(traditional_passwords_list) if traditional_passwords_list else "N/A"
 
-    # ✅ Ensure Claude's response is not overwritten
+    #  Ensure Claude's response is not overwritten
     if "Claude" not in test_results:
         test_results["Claude"] = {}
 
@@ -338,9 +331,9 @@ def log_test_results():
     gpt_attempts_str = ", ".join(gpt_attempts_list)
 
     try:
-        print(f"DEBUG: Final passphrase being logged: {test_results['passphrase']}")
+        print(f" Final passphrase being logged: {test_results['passphrase']}")
 
-        # ✅ Define column headers and their corresponding data mappings
+        #  Define column headers and their corresponding data mappings
         columns = {
             "Timestamp": lambda: time.strftime("%Y-%m-%d %H:%M:%S"),
             "AI_Password": lambda: generated_password or "N/A",
@@ -375,10 +368,10 @@ def log_test_results():
 
             writer.writerow([func() for func in columns.values()])
 
-        print(f"✅ Security test results saved to {PASSWORD_RESULT_LOG}")
+        print(f" Security test results saved to {PASSWORD_RESULT_LOG}")
 
     except Exception as e:
-        print(f"❌ Error logging test results: {e}")
+        print(f" Error logging test results: {e}")
 
 
 def flatten_columns(columns, prefix=""):
@@ -441,29 +434,29 @@ def log_error(error):
         with open(error_log, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] Error in logging test results: {str(error)}\n")
     except Exception as e:
-        print(f"❌ Failed to log error: {str(e)}")
+        print(f" Failed to log error: {str(e)}")
 
 def on_login():
     """Handles voice-based login authentication."""
-    print("🔐 Step 1: Recording login voice...")
+    print(" Step 1: Recording login voice...")
     audio, sr = record_audio()
     
     if audio is not None:
-        print("🔍 Step 2: Extracting login voice features...")
+        print(" Step 2: Extracting login voice features...")
         features = extract_audio_features(audio, sr)
         
-        print("🛠 Step 3: Verifying voiceprint...")
+        print(" Step 3: Verifying voiceprint...")
         if verify_voice(features):
-            print("✅ Voice matched! Checking passphrase...")
+            print(" Voice matched! Checking passphrase...")
             recognized_passphrase = recognize_speech("vocal_input.wav")
 
             if verify_passphrase(recognized_passphrase):
-                print("✅ Passphrase matched! Now verifying AI-generated password...")
+                print(" Passphrase matched! Now verifying AI-generated password...")
                 user_entered_password = simpledialog.askstring("Password Required", "Enter the AI-generated password:")
                 
                 if not user_entered_password:
                     print("Password entry canceled")
-                    result_label.config(text="❌ Password entry canceled.")
+                    result_label.config(text=" Password entry canceled.")
                     return
                 
                 # Correct file path for hashed password
@@ -471,8 +464,8 @@ def on_login():
 
                 # Check existence clearly
                 if not os.path.exists(HASHED_PASSWORD_FILE):
-                    print(f"❌ Error: Hashed password file missing at {HASHED_PASSWORD_FILE}")
-                    result_label.config(text="❌ Missing hashed password file.")
+                    print(f" Error: Hashed password file missing at {HASHED_PASSWORD_FILE}")
+                    result_label.config(text=" Missing hashed password file.")
                     return
                 
                 try:
@@ -482,8 +475,8 @@ def on_login():
                         stored_hashed_passwords = [line.strip() for line in f.readlines() if line.strip()]
                     
                     if not stored_hashed_passwords:
-                        print("❌ Error: No stored hashed passwords found in file")
-                        result_label.config(text="❌ No stored passwords found. Please generate a password first.")
+                        print(" Error: No stored hashed passwords found in file")
+                        result_label.config(text=" No stored passwords found. Please generate a password first.")
                         return
                     
                     # Get the most recent hashed password (last one in the file)
@@ -493,23 +486,23 @@ def on_login():
                     user_hashed_password = hashlib.sha256(user_entered_password.encode()).hexdigest()
 
                     if user_hashed_password == most_recent_hash:
-                        print("✅ Access Granted! 🎉")
-                        result_label.config(text="✅ Access Granted! 🎉")
+                        print(" Access Granted! ")
+                        result_label.config(text=" Access Granted! ")
                     else:
-                        print("❌ Incorrect AI-generated password. Access Denied.")
-                        result_label.config(text="❌ Incorrect AI-generated password.")
+                        print(" Incorrect AI-generated password. Access Denied.")
+                        result_label.config(text=" Incorrect AI-generated password.")
                 except Exception as e:
-                    print(f"❌ Error during password verification: {e}")
-                    result_label.config(text=f"❌ Error: {str(e)}")
+                    print(f" Error during password verification: {e}")
+                    result_label.config(text=f" Error: {str(e)}")
             else:
-                print("❌ Incorrect passphrase. Access Denied.")
-                result_label.config(text="❌ Incorrect passphrase.")
+                print(" Incorrect passphrase. Access Denied.")
+                result_label.config(text=" Incorrect passphrase.")
         else:
-            print("❌ Access Denied! Voice does not match.")
-            result_label.config(text="❌ Access Denied! Voice does not match.")
+            print(" Access Denied! Voice does not match.")
+            result_label.config(text=" Access Denied! Voice does not match.")
     else:
-        print("❌ Error: Audio capture failed.")
-        result_label.config(text="❌ Error in capturing audio!")       
+        print(" Error: Audio capture failed.")
+        result_label.config(text=" Error in capturing audio!")       
 def compare_ai_results():
     """Opens a new window to display AI vs Traditional Password Comparison."""
     log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
@@ -558,18 +551,18 @@ def compare_ai_results():
         compare_window.configure(bg="#282c34")
 
         # Add a header
-        tk.Label(compare_window, text="🔍 AI Password Security Results", 
+        tk.Label(compare_window, text=" AI Password Security Results", 
                 font=("Helvetica", 16, "bold"), fg="#61dafb", bg="#282c34").pack(pady=10)
         
         # Display the selected fields
-        tk.Label(compare_window, text=f"🔐 AI Password: {ai_password}", 
+        tk.Label(compare_window, text=f" AI Password: {ai_password}", 
                 font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
         
-        tk.Label(compare_window, text=f"🗣️ Passphrase: {passphrase}", 
+        tk.Label(compare_window, text=f" Passphrase: {passphrase}", 
                 font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
         
         # Claude attempts section with scrolling text area for longer outputs
-        tk.Label(compare_window, text="🤖 Claude's Attempts:", 
+        tk.Label(compare_window, text=" Claude's Attempts:", 
                 font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
                 
         cl_attempts_frame = tk.Frame(compare_window, bg="#282c34")
@@ -588,11 +581,11 @@ def compare_ai_results():
         cl_attempts_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         # GPT section
-        tk.Label(compare_window, text=f"🤖 GPT-4 Cracked: {gpt_cracked}", 
+        tk.Label(compare_window, text=f" GPT-4 Cracked: {gpt_cracked}", 
                 font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
         
         # GPT attempts with scrolling text
-        tk.Label(compare_window, text="🔓 GPT's Attempts:", 
+        tk.Label(compare_window, text=" GPT's Attempts:", 
                 font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
                 
         gpt_attempts_frame = tk.Frame(compare_window, bg="#282c34")
@@ -623,13 +616,13 @@ def compare_ai_results():
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load test results: {e}")
-### ✅ UI BUTTON HANDLING
+###  UI BUTTON HANDLING
 def disable_buttons():
     """Disables test button during automated testing."""
     test_button.config(state=tk.DISABLED)
     compare_button.config(state=tk.DISABLED)
 
-# ✅ GUI SETUP
+#  GUI SETUP
 app = tk.Tk()
 app.title("Secure AI Password Generator")
 app.geometry("600x500")
@@ -658,7 +651,7 @@ def safe_on_generate():
     global password_generation_in_progress
     # If already processing, ignore the second call
     if password_generation_in_progress:
-        print("⚠️ Generation already in progress, ignoring duplicate call")
+        print(" Generation already in progress, ignoring duplicate call")
         return     
 
     try:

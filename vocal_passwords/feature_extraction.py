@@ -9,7 +9,7 @@ DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend/d
 
 def log_voice_features(mfcc_mean, spectral_centroid_mean, tempo):
     """Logs extracted voice features to a CSV file."""
-    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensure `logs/` exists
+    os.makedirs(LOGS_DIR, exist_ok=True)  
 
     with open(FEATURE_LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
@@ -41,11 +41,11 @@ def extract_audio_features(audio, sr):
     print("  Sub-step 2.3: Extracting rhythm features (tempo)...")
     tempo = extract_rhythm_features(audio, sr)
 
-    # ✅ Ensure features are numeric
+    #  Ensure features are numeric
     features = np.array([mfcc_mean[:5].mean(), spectral_centroid_mean, tempo], dtype=np.float32)
     print(f"  - Extracted Features (Numeric): {features}")
 
-    # ✅ Log extracted features
+    #  Log extracted features
     log_voice_features(features[0], features[1], features[2])
 
     return features

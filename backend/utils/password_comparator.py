@@ -20,7 +20,7 @@ def compare_passwords(ai_password, traditional_passwords):
     """
     results = []
 
-    # ✅ Evaluate Traditional Passwords
+    #  Evaluate Traditional Passwords
     for pwd in traditional_passwords:
         results.append({
             "Type": "Traditional",
@@ -29,7 +29,7 @@ def compare_passwords(ai_password, traditional_passwords):
             "Brute-Force Time (s)": brute_force_complexity(pwd)
         })
 
-    # ✅ Evaluate AI-Generated Password
+    #  Evaluate AI-Generated Password
     results.append({
         "Type": "AI-Generated",
         "Password": ai_password,
@@ -37,4 +37,4 @@ def compare_passwords(ai_password, traditional_passwords):
         "Brute-Force Time (s)": brute_force_complexity(ai_password)
     })
 
-    return results, traditional_passwords  # ✅ Return both results and the password list
+    return results, traditional_passwords  #  Return both results and the password list

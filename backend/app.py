@@ -6,7 +6,7 @@ from flask import Flask, jsonify
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.routes.passwords_routes import passwords_routes
-from backend.routes.voice_routes import voice_routes  # ✅ Import the new voice authentication routes
+from backend.routes.voice_routes import voice_routes  
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -21,7 +21,7 @@ def create_app():
 
     # Register blueprints (routes)
     app.register_blueprint(passwords_routes)
-    app.register_blueprint(voice_routes)  # ✅ Register the new voice authentication routes
+    app.register_blueprint(voice_routes)  #  Register the new voice authentication routes
 
     return app
 
