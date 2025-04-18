@@ -93,7 +93,7 @@ sound-to-security/
 | Attack Method | Success Rate | Avg. Crack Time | Notes |
 |---------------|--------------|------------------|-------|
 | Brute Force   | Less than 5% | ~5–12 seconds    | Limited by entropy |
-| Dictionary    | 0%           | N/A              | AI passwords not in dataset |
+| Claude    | 0%           | N/A              | Refused to guess password for ethical reasons |
 | GPT-4         | 0/5 guesses  | Under 2s per guess | No successful match |
 | Hashcat       | 0%           | Timed out        | Tested against multiple modes |
 
