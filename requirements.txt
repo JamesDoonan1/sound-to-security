@@ -1,0 +1,11 @@
+sounddevice
+librosa
+anthropic
+numpy
+cryptography
+openai
+flask
+soundfile
+resemblyzer
+requests
+SpeechRecognition
