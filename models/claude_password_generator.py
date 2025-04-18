@@ -16,7 +16,7 @@ anthropic_api_key = os.getenv("CLAUDE_API_KEY")
 
 def log_password(password, status):
     """Logs generated passwords and validation status to a CSV file."""
-    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensure `logs/` exists
+    os.makedirs(LOGS_DIR, exist_ok=True)  #  Ensure `logs/` exists
 
     with open(PASSWORD_LOG_FILE, mode="a", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
@@ -58,20 +58,20 @@ def generate_password_with_claude(features, passphrase="", max_retries=5):
             else:
                 password = str(response.content).strip()
 
-            # ✅ Validate and log password
+            #  Validate and log password
             if validate_password(password):
-                print(f"✅ Generated Valid Password: {password}")
+                print(f" Generated Valid Password: {password}")
                 log_password(password, "Valid")
                 return password
 
-            print(f"⚠️ Invalid password format received: {password}. Retrying...")
+            print(f" Invalid password format received: {password}. Retrying...")
             log_password(password, "Invalid")
 
         except anthropic.APIError as e:
-            print(f"❌ Claude API Error: {e}")
+            print(f" Claude API Error: {e}")
 
             if "overloaded_error" in str(e):
-                print(f"⚠️ Claude is overloaded. Retrying {attempt + 1}/{max_retries} in 5 seconds...")
+                print(f" Claude is overloaded. Retrying {attempt + 1}/{max_retries} in 5 seconds...")
                 time.sleep(5)
             else:
                 return "Error: Could not generate password."

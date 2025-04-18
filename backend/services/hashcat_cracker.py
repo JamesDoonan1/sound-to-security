@@ -26,7 +26,7 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3"):
     """
 
     if not os.path.exists(HASH_FILE):
-        return False, "❌ Hash file not found!"
+        return False, " Hash file not found!"
 
     # Hashcat command
     command = [
@@ -47,8 +47,8 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3"):
             cracked_password = result.stdout.strip().split(":")[-1]  # Extract password
             return True, cracked_password
         else:
-            return False, "❌ No password cracked!"
+            return False, " No password cracked!"
     
     except Exception as e:
-        return False, f"❌ Error running Hashcat: {str(e)}"
+        return False, f" Error running Hashcat: {str(e)}"
 

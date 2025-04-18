@@ -11,17 +11,17 @@ import csv
 import time  
 
 
-# 📌 Get absolute paths dynamically
+#  Get absolute paths dynamically
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # This is `backend/services/`
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))  # Moves up to `sound-to-security/`
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data"))
 LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))  
 ENTROPY_LOG_FILE = os.path.join(LOGS_DIR, "entropy_results_log.csv")
 
-# ✅ Correct file paths for passphrase and voiceprint
+#  Correct file paths for passphrase and voiceprint
 PASSPHRASE_FILE = os.path.join(DATA_DIR, "stored_passphrase.txt")
 VOICEPRINT_FILE = os.path.join(ROOT_DIR, "stored_voiceprint.npy")
-### ✅ PASSWORD GENERATION FUNCTION
+###  PASSWORD GENERATION FUNCTION
 
 def generate_traditional_password(length=12):
     """Generate a traditional password with a given length."""
@@ -29,22 +29,22 @@ def generate_traditional_password(length=12):
     password = ''.join(random.choice(characters) for i in range(length))
     return password
 
-### ✅ PASSWORD GENERATION FUNCTION
+###  PASSWORD GENERATION FUNCTION
 def process_audio_and_generate_password(audio_path):
     """Process an audio file and generate a secure password, then compare it with traditional passwords."""
     audio, sr = librosa.load(audio_path, sr=22050)
     features = extract_audio_features(audio, sr)
 
-    # ✅ Generate AI Password
+    #  Generate AI Password
     ai_password = generate_password_with_claude(features) or generate_traditional_password()
 
-    # ✅ Generate Traditional Passwords (10 variations)
+    #  Generate Traditional Passwords (10 variations)
     traditional_passwords = [generate_traditional_password() for _ in range(10)]
 
-    # ✅ Compare Passwords (Entropy & Brute-Force Complexity)
+    #  Compare Passwords (Entropy & Brute-Force Complexity)
     comparison_results = []
 
-    # ✅ AI Password Entropy Calculation
+    #  AI Password Entropy Calculation
     ai_entropy = calculate_entropy(ai_password)
     ai_brute_time = brute_force_complexity(ai_password)
     comparison_results.append({
@@ -53,9 +53,8 @@ def process_audio_and_generate_password(audio_path):
         "Entropy": ai_entropy,
         "Brute-Force Time (s)": ai_brute_time
     })
-    print(f"🟢 DEBUG: AI Password: {ai_password} | Entropy: {ai_entropy} | Brute-Force Time: {ai_brute_time}")
-
-    # ✅ Traditional Passwords Entropy Calculation
+    
+    #  Traditional Passwords Entropy Calculation
     for pwd in traditional_passwords:
         entropy = calculate_entropy(pwd)
         brute_time = brute_force_complexity(pwd)
@@ -65,9 +64,8 @@ def process_audio_and_generate_password(audio_path):
             "Entropy": entropy,
             "Brute-Force Time (s)": brute_time
         })
-        print(f"🟢 DEBUG: Traditional Password: {pwd} | Entropy: {entropy} | Brute-Force Time: {brute_time}")
-
-    # ✅ Log entropy results in a separate file
+        
+    #  Log entropy results in a separate file
     log_entropy_results(comparison_results)
 
     return {
@@ -79,16 +77,16 @@ def process_audio_and_generate_password(audio_path):
     
 def log_entropy_results(results):
     """Logs entropy and brute-force complexity results to a separate file."""
-    os.makedirs(LOGS_DIR, exist_ok=True)  # ✅ Ensures `logs/` exists
+    os.makedirs(LOGS_DIR, exist_ok=True)  # Ensures `logs/` exists
     log_file = os.path.join(LOGS_DIR, "entropy_results_log.csv")
     
     if not results or len(results) == 0:
-        print("❌ ERROR: No entropy results to log!")
+        print(" ERROR: No entropy results to log!")
         return  # Exit early if there are no results
 
-    print(f"🟢 DEBUG: Logging {len(results)} passwords to entropy log...")
+    print(f" Logging {len(results)} passwords to entropy log...")
 
-    # ✅ Convert results into a dictionary format like `log_test_results()`
+    #  Convert results into a dictionary format like `log_test_results()`
     entropy_results = {
         "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "AI_Password": None,
@@ -111,8 +109,8 @@ def log_entropy_results(results):
 
     entropy_results["Traditional_Passwords"] = "; ".join(traditional_password_metrics)
 
-    # ✅ Debugging before writing
-    print(f"🟢 DEBUG: Final Entropy Results → {entropy_results}")
+   
+    print(f" Final Entropy Results → {entropy_results}")
 
     try:
         file_exists = os.path.isfile(log_file)
@@ -120,7 +118,7 @@ def log_entropy_results(results):
         with open(log_file, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file, quoting=csv.QUOTE_MINIMAL)
 
-            # ✅ Write headers only if file does not exist
+            #  Write headers only if file does not exist
             if not file_exists:
                 writer.writerow(["Timestamp", "AI_Password", "AI_Entropy", "AI_Brute_Force_Time", "Traditional_Passwords"])
 
@@ -132,53 +130,53 @@ def log_entropy_results(results):
                 entropy_results["Traditional_Passwords"]
             ])
 
-        print(f"✅ Entropy results logged in {log_file}")
+        print(f" Entropy results logged in {log_file}")
 
     except Exception as e:
-        print(f"❌ Error logging entropy results: {e}")
+        print(f" Error logging entropy results: {e}")
 
-### ✅ PASS-PHRASE FUNCTIONS
+###  PASS-PHRASE FUNCTIONS
 def extract_passphrase():
     """Retrieve the stored passphrase from the correct location."""
     try:
         # Ensure the file exists
         if not os.path.exists(PASSPHRASE_FILE):
-            print(f"❌ ERROR: Passphrase file missing at: {PASSPHRASE_FILE}")
+            print(f" ERROR: Passphrase file missing at: {PASSPHRASE_FILE}")
             return None
 
         # Read the passphrase
         with open(PASSPHRASE_FILE, "r") as f:
             passphrase = f.read().strip()
             if not passphrase:
-                print("❌ ERROR: Passphrase file is empty!")
+                print(" ERROR: Passphrase file is empty!")
                 return None
             print(f"🛠 DEBUG: Extracted Passphrase → {passphrase}")
             return passphrase
     except Exception as e:
-        print(f"❌ ERROR: Failed to read passphrase file: {e}")
+        print(f" ERROR: Failed to read passphrase file: {e}")
         return None   
 
 def save_passphrase(passphrase):
     """Save passphrase to the correct file."""
     with open(PASSPHRASE_FILE, "w") as f:
         f.write(passphrase)
-    print(f"✅ Passphrase saved successfully at {PASSPHRASE_FILE}")
+    print(f" Passphrase saved successfully at {PASSPHRASE_FILE}")
 
-### ✅ VOICEPRINT FUNCTIONS
+###  VOICEPRINT FUNCTIONS
 def extract_voice_features():
     """Retrieve stored voice features from the correct location."""
     if os.path.exists(VOICEPRINT_FILE):
         voiceprint = np.load(VOICEPRINT_FILE).astype(np.float32)
-        print(f"🛠 DEBUG: Extracted Voice Features → {voiceprint}")  # ✅ Should print actual values
+        print(f"🛠 DEBUG: Extracted Voice Features → {voiceprint}")  
         return {
             "mfcc": float(voiceprint[0]),
             "spectral_centroid": float(voiceprint[1]),
             "tempo": float(voiceprint[2])
         }
-    print("❌ ERROR: Voiceprint file missing!")
-    return None  # 🔥 Fix: Don't return fake values like `-999.0`, just return `None`.
+    print(" ERROR: Voiceprint file missing!")
+    return None  
 
 def save_voiceprint(voice_features):
     """Save extracted voice features."""
     np.save(VOICEPRINT_FILE, np.array(voice_features, dtype=np.float32))
-    print(f"✅ Voiceprint saved successfully at {VOICEPRINT_FILE}")
+    print(f" Voiceprint saved successfully at {VOICEPRINT_FILE}")

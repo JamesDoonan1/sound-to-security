@@ -5,8 +5,8 @@ from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 from backend.services.passwords_service import process_audio_and_generate_password
 from backend.services.password_cracker import brute_force_crack
-from backend.services.ai_password_cracker import ai_crack_password  # Existing AI module
-from backend.services.gpt_password_tester import test_password_with_gpt  # ✅ New GPT testing module
+from backend.services.ai_password_cracker import ai_crack_password 
+from backend.services.gpt_password_tester import test_password_with_gpt  
 from backend.services.passwords_service import extract_passphrase, extract_voice_features
 from services.hashcat_cracker import save_hash, crack_password_with_hashcat
 
@@ -16,7 +16,7 @@ passwords_routes = Blueprint("passwords_routes", __name__)
 logging.basicConfig(level=logging.INFO)
 
 TEMP_DIR = os.getenv("TEMP_DIR", "./temp")
-os.makedirs(TEMP_DIR, exist_ok=True)  # Ensure the temp directory exists
+os.makedirs(TEMP_DIR, exist_ok=True)  
 
 @passwords_routes.route("/", methods=["GET"])
 def home():
@@ -38,11 +38,11 @@ def generate_password():
 
     try:
         result = process_audio_and_generate_password(audio_path)
-        logging.info(f"✅ Password successfully generated: {result['ai_password']}")
+        logging.info(f" Password successfully generated: {result['ai_password']}")
 
         return jsonify(result), 200
     except Exception as e:
-        logging.error(f"❌ Error generating password: {e}")
+        logging.error(f" Error generating password: {e}")
         return jsonify({"error": str(e)}), 500
 
 @passwords_routes.route("/api/test-password", methods=["POST"])
@@ -60,22 +60,22 @@ def test_password():
 
     logging.info(f"🔍 Testing password security for: {target_password} using {test_type}")
 
-    # ✅ Extract passphrase and voice features
+    #  Extract passphrase and voice features
     passphrase = extract_passphrase()
     voice_features = extract_voice_features()
 
-    # ✅ Handle missing passphrase and voice features gracefully
+    #  Handle missing passphrase and voice features gracefully
     if passphrase is None:
-        logging.warning("⚠️ No passphrase found, using placeholder.")
+        logging.warning(" No passphrase found, using placeholder.")
         passphrase = "UNKNOWN_PASSPHRASE"
 
-    voice_features = extract_voice_features()  # ✅ This is already a dictionary
+    voice_features = extract_voice_features()  #  This is already a dictionary
 
     if voice_features is None:
-        logging.error("❌ Missing voice features for GPT test.")
+        logging.error(" Missing voice features for GPT test.")
         return jsonify({"error": "Missing voice features for GPT test"}), 500
 
-    # ✅ FIXED: Use dictionary keys instead of list indexing
+    #  FIXED: Use dictionary keys instead of list indexing
     voice_features_dict = {
         "mfcc": float(voice_features["mfcc"]),
         "spectral_centroid": float(voice_features["spectral_centroid"]),
@@ -83,7 +83,7 @@ def test_password():
     }
 
 
-    # ✅ Perform the requested test
+    #  Perform the requested test
     try:
         if test_type == "gpt":
             result = test_password_with_gpt(target_password, passphrase, voice_features_dict)
@@ -97,7 +97,7 @@ def test_password():
         return jsonify(result)
 
     except Exception as e:
-        logging.error(f"❌ Error during {test_type} password testing: {e}")
+        logging.error(f" Error during {test_type} password testing: {e}")
         return jsonify({"error": f"{test_type} test failed: {str(e)}"}), 500
 
 @passwords_routes.route("/api/test-password-hashcat", methods=["POST"])
@@ -109,7 +109,7 @@ def test_password_with_hashcat():
     attack_mode = data.get("attack_mode", "3")  # Default brute-force
 
     if not password_hash:
-        return jsonify({"error": "❌ No password hash provided!"}), 400
+        return jsonify({"error": " No password hash provided!"}), 400
 
     # Save the hash for Hashcat
     save_hash(password_hash)
