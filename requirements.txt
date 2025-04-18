@@ -2,4 +2,10 @@ sounddevice
 librosa
 anthropic
 numpy
-tkinter
+cryptography
+openai
+flask
+soundfile
+resemblyzer
+requests
+SpeechRecognition
