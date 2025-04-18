@@ -14,14 +14,23 @@ def create_app():
     """Create and configure the Flask app."""
     app = Flask(__name__)
 
-@app.route('/generate-vocal-password', methods=['POST'])
-def generate_vocal_password():
-    # Simulate password generation from vocal input
-    # In the future, you will replace this with real audio processing logic
-    vocal_input = request.json.get('vocal_input', '')
-    generated_password = f"secure-{vocal_input}"  # Example placeholder logic
+    # Default route
+    @app.route("/", methods=["GET"])
+    def home():
+        return jsonify({"message": "Welcome to the Password Generator API!"})
 
-    return jsonify({"password": generated_password})
+    # Register blueprints (routes)
+    app.register_blueprint(passwords_routes)
+    app.register_blueprint(voice_routes)  
 
-if __name__ == '__main__':
+    return app
+
+if __name__ == "__main__":
+    # Print Python's module search path for debugging
+    print("PYTHONPATH:", sys.path)
+
+    # Create the Flask application
+    app = create_app()
+
+    # Run the application in debug mode
     app.run(debug=True)
