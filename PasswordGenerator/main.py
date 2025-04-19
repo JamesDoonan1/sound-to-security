@@ -2,12 +2,17 @@ import os
 import json
 import librosa
 import numpy as np
+import base64
 
 from hash_password_generator import extract_features, create_hash
 from ai_password_generator import AIPasswordGenerator
-from symmetric_key_generation import derive_key_from_hash
+from symmetric_key_generation import derive_key, new_salt
 from encrypt_decrypt_password import encrypt_password, decrypt_password
-from database_control import initialize_db, store_encrypted_password, get_encrypted_password
+from database_control import (
+    initialize_db,
+    store_encrypted_password,
+    get_encrypted_password_by_hash,
+)
 
 # Set a default username (this could later be obtained from user input)
 USERNAME = "default_user"
@@ -21,16 +26,8 @@ print(f"JSON file being used: {os.path.abspath(OUTPUT_JSON_FILE)}")
 if os.path.exists(OUTPUT_JSON_FILE):
     try:
         with open(OUTPUT_JSON_FILE, "r") as f:
-            raw_json = f.read().strip()  # Read raw JSON data and remove any whitespace
-            
-            # Debugging: Show the file's actual content
-            # print(f"Raw JSON content: {raw_json}") 
-            
-            if raw_json:  # If the file is not empty
-                audio_data_list = json.loads(raw_json)
-            else:
-                audio_data_list = []  # Start fresh if the file is empty
-            
+            raw_json = f.read().strip()
+            audio_data_list = json.loads(raw_json) if raw_json else []
         processed_count = len(audio_data_list)
         print(f"Found existing JSON with {processed_count} processed files.")
     except (json.JSONDecodeError, FileNotFoundError) as e:
@@ -43,9 +40,6 @@ else:
     processed_count = 0
 
 def summarize_array(arr: np.ndarray) -> dict:
-    """
-    Takes a NumPy array and returns a dictionary of summary stats.
-    """
     return {
         "mean": float(arr.mean()),
         "std": float(arr.std()),
@@ -55,7 +49,8 @@ def summarize_array(arr: np.ndarray) -> dict:
 
 def process_audio_file(file_name, y, sr, password_gen, file_count):
     """
-    Extracts features, generates hash & password, stores summarized features + hash + password in JSON.
+    Extracts features, generates hash & password (with salt),
+    stores summarized features + hash + password in JSON.
     """
     try:
         print(f"\n[{file_count}] Processing file: {file_name}")
@@ -65,28 +60,37 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
         if not features:
             print(f"Failed to extract features for {file_name}.")
             return
-
         print(f"Extracted features for {file_name} successfully.")
 
         # 2) Generate hash
         audio_hash = create_hash(features)
         print(f"Generated Hash: {audio_hash}")
 
-        # 3) Derive key
-        key = derive_key_from_hash(audio_hash)
+        # 3) Generate a fresh salt + derive key
+        salt_bytes = new_salt()                  # 16 random bytes
+        key = derive_key(audio_hash, salt_bytes)
 
-        # 4) Check if there's an existing password in DB
-        existing_record = get_encrypted_password(audio_hash)  # Now returns a tuple (username, encrypted_password) or (None, None)
-        if existing_record and existing_record[1]:
-            stored_username, stored_encrypted_pw = existing_record
+        # 4) Check if there's an existing record in DB
+        stored_username, b64_salt, stored_encrypted_pw = \
+            get_encrypted_password_by_hash(audio_hash)
+
+        if stored_encrypted_pw:
+            # Re-derive key from stored salt and decrypt
+            salt_db = base64.b64decode(b64_salt)
+            key = derive_key(audio_hash, salt_db)
             password = decrypt_password(stored_encrypted_pw, key)
             print(f"Retrieved stored password for user {stored_username}: {password}")
         else:
+            # Generate, encrypt & store new password
             password = password_gen.generate_password(features)
             if password:
                 encrypted_pw = encrypt_password(password, key)
-                # Store the record along with the username
-                store_encrypted_password(audio_hash, USERNAME, encrypted_pw)
+                store_encrypted_password(
+                    username=USERNAME,
+                    audio_hash=audio_hash,
+                    salt=base64.b64encode(salt_bytes).decode("utf-8"),
+                    encrypted_password=encrypted_pw
+                )
                 print(f"Generated new password for user {USERNAME}: {password}")
             else:
                 print("Failed to generate password.")
@@ -98,20 +102,19 @@ def process_audio_file(file_name, y, sr, password_gen, file_count):
             for k, v in features.items()
         }
 
-        # 6) Build a record with only the needed info (the JSON output remains unchanged)
+        # 6) Build a record for JSON output
         audio_entry = {
-            "features": summarized_features, 
+            "features": summarized_features,
             "hash": audio_hash,
-            "password": password 
+            "password": password
         }
-
         audio_data_list.append(audio_entry)
 
         # Save JSON immediately after each file
         with open(OUTPUT_JSON_FILE, "w") as f:
             json.dump(audio_data_list, f, indent=4)
-            f.flush()  # Ensure data is written immediately
-            os.fsync(f.fileno())  # Force the OS to write the file
+            f.flush()
+            os.fsync(f.fileno())
 
         print(json.dumps(audio_entry, indent=4))
 
@@ -126,8 +129,8 @@ if __name__ == "__main__":
     initialize_db()
     password_gen = AIPasswordGenerator()
 
-    file_list = sorted(os.listdir(AUDIO_FOLDER_PATH))  # Ensure consistent order
-    file_count = 0  # Track processed file count
+    file_list = sorted(os.listdir(AUDIO_FOLDER_PATH))
+    file_count = 0
 
     print("\nStarting audio file processing...\n")
 
@@ -142,15 +145,15 @@ if __name__ == "__main__":
             continue
 
         file_path = os.path.join(AUDIO_FOLDER_PATH, file_name)
-        print("=" * 60)  # Separator for readability
+        print("=" * 60)
 
         try:
             y, sr = librosa.load(file_path, sr=None)
-            process_audio_file(file_name, y, sr, password_gen, file_count + 1)  # Adjusted count
+            process_audio_file(file_name, y, sr, password_gen, file_count + 1)
         except Exception as e:
             print(f"Failed to process {file_name}: {e}")
 
-        file_count += 1  # Only increment after processing
+        file_count += 1
 
     print("=" * 60)
     print(f"\nProcessing completed. Total new files processed: {file_count - processed_count}")

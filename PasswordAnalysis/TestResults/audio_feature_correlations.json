@@ -1,0 +1,414 @@
+{
+    "correlation_matrix": {
+        "uppercase_pct": {
+            "tempo": 0.19816980292255137,
+            "spectral_centroid": 0.08180620579850353,
+            "mfcc_mean": 0.4350079270254382,
+            "zero_crossing_rate": -0.0016159751292650869,
+            "beats_mean": -0.012010696427056603,
+            "spectral_contrast": -0.2244130490319226
+        },
+        "lowercase_pct": {
+            "tempo": -0.4337684857704718,
+            "spectral_centroid": -0.0011117302277988857,
+            "mfcc_mean": -0.34352515966298536,
+            "zero_crossing_rate": 0.036365319970191434,
+            "beats_mean": -0.01649231484016502,
+            "spectral_contrast": 0.16344407496489305
+        },
+        "digit_pct": {
+            "tempo": 0.42510625789874623,
+            "spectral_centroid": -0.05346693205259764,
+            "mfcc_mean": 0.07242605485036215,
+            "zero_crossing_rate": -0.030618271071196378,
+            "beats_mean": 0.04257569348093532,
+            "spectral_contrast": -0.029062055442351055
+        },
+        "symbol_pct": {
+            "tempo": 0.09996861352993783,
+            "spectral_centroid": -0.045207975951991525,
+            "mfcc_mean": 0.015419426780545654,
+            "zero_crossing_rate": -0.034595498053363136,
+            "beats_mean": -0.0009823301368379837,
+            "spectral_contrast": 0.009872958328214667
+        },
+        "entropy": {
+            "tempo": -0.136998956821573,
+            "spectral_centroid": 0.04298662618683691,
+            "mfcc_mean": 0.04713009637898113,
+            "zero_crossing_rate": 0.035032153889143255,
+            "beats_mean": 0.03262411581713773,
+            "spectral_contrast": 0.0015774059715189543
+        },
+        "starts_with_uppercase": {
+            "tempo": 0.08580481892137685,
+            "spectral_centroid": 0.16562849539985067,
+            "mfcc_mean": 0.17071159344031245,
+            "zero_crossing_rate": 0.11721517388933861,
+            "beats_mean": -0.03171147797317348,
+            "spectral_contrast": -0.02741252243093007
+        },
+        "starts_with_symbol": {
+            "tempo": -0.019297428354934185,
+            "spectral_centroid": -0.1105018241194333,
+            "mfcc_mean": 0.030111712862269793,
+            "zero_crossing_rate": -0.1066294971300566,
+            "beats_mean": 0.024794586981242914,
+            "spectral_contrast": -0.04130293281743297
+        }
+    },
+    "p_values_matrix": {
+        "uppercase_pct": {
+            "tempo": 4.138938955161636e-05,
+            "spectral_centroid": 0.09327982103887332,
+            "mfcc_mean": 6.539642522099621e-21,
+            "zero_crossing_rate": 0.9735964776817996,
+            "beats_mean": 0.805675704969563,
+            "spectral_contrast": 3.2260298873575925e-06
+        },
+        "lowercase_pct": {
+            "tempo": 8.66582975800854e-21,
+            "spectral_centroid": 0.9818336273260473,
+            "mfcc_mean": 3.9276802375784424e-13,
+            "zero_crossing_rate": 0.4562292354415281,
+            "beats_mean": 0.7355035638438546,
+            "spectral_contrast": 0.0007508515149844559
+        },
+        "digit_pct": {
+            "tempo": 6.002418086258003e-20,
+            "spectral_centroid": 0.2731321611821048,
+            "mfcc_mean": 0.13744836767274066,
+            "zero_crossing_rate": 0.5304878228449296,
+            "beats_mean": 0.38298011254872244,
+            "spectral_contrast": 0.5515986765971251
+        },
+        "symbol_pct": {
+            "tempo": 0.04010436987248349,
+            "spectral_centroid": 0.354232841023436,
+            "mfcc_mean": 0.7521277881111949,
+            "zero_crossing_rate": 0.4784566485267176,
+            "beats_mean": 0.9839478033693868,
+            "spectral_contrast": 0.8397447673110745
+        },
+        "entropy": {
+            "tempo": 0.004813199863028873,
+            "spectral_centroid": 0.37840081228739636,
+            "mfcc_mean": 0.3341234511653501,
+            "zero_crossing_rate": 0.4729184624940449,
+            "beats_mean": 0.5038939326745621,
+            "spectral_contrast": 0.9742264405289883
+        },
+        "starts_with_uppercase": {
+            "tempo": 0.07829300733386252,
+            "spectral_centroid": 0.0006355370622821178,
+            "mfcc_mean": 0.0004277326008928829,
+            "zero_crossing_rate": 0.01599293867667593,
+            "beats_mean": 0.515906315893515,
+            "spectral_contrast": 0.5744153107197011
+        },
+        "starts_with_symbol": {
+            "tempo": 0.6926354657922921,
+            "spectral_centroid": 0.023194094360764975,
+            "mfcc_mean": 0.5373144330090185,
+            "zero_crossing_rate": 0.02850961678394247,
+            "beats_mean": 0.6115139761689121,
+            "spectral_contrast": 0.3973766321493306
+        }
+    },
+    "strongest_correlations": [
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "uppercase_pct",
+            "correlation": 0.4350079270254382,
+            "p_value": 6.539642522099621e-21,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "lowercase_pct",
+            "correlation": -0.4337684857704718,
+            "p_value": 8.66582975800854e-21,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "digit_pct",
+            "correlation": 0.42510625789874623,
+            "p_value": 6.002418086258003e-20,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "lowercase_pct",
+            "correlation": -0.34352515966298536,
+            "p_value": 3.9276802375784424e-13,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "uppercase_pct",
+            "correlation": -0.2244130490319226,
+            "p_value": 3.2260298873575925e-06,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "uppercase_pct",
+            "correlation": 0.19816980292255137,
+            "p_value": 4.138938955161636e-05,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": 0.17071159344031245,
+            "p_value": 0.0004277326008928829,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": 0.16562849539985067,
+            "p_value": 0.0006355370622821178,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "lowercase_pct",
+            "correlation": 0.16344407496489305,
+            "p_value": 0.0007508515149844559,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "entropy",
+            "correlation": -0.136998956821573,
+            "p_value": 0.004813199863028873,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": 0.11721517388933861,
+            "p_value": 0.01599293867667593,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": -0.1105018241194333,
+            "p_value": 0.023194094360764975,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": -0.1066294971300566,
+            "p_value": 0.02850961678394247,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "symbol_pct",
+            "correlation": 0.09996861352993783,
+            "p_value": 0.04010436987248349,
+            "statistically_significant": true
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": 0.08580481892137685,
+            "p_value": 0.07829300733386252,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "uppercase_pct",
+            "correlation": 0.08180620579850353,
+            "p_value": 0.09327982103887332,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "digit_pct",
+            "correlation": 0.07242605485036215,
+            "p_value": 0.13744836767274066,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "digit_pct",
+            "correlation": -0.05346693205259764,
+            "p_value": 0.2731321611821048,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "entropy",
+            "correlation": 0.04713009637898113,
+            "p_value": 0.3341234511653501,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "symbol_pct",
+            "correlation": -0.045207975951991525,
+            "p_value": 0.354232841023436,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "entropy",
+            "correlation": 0.04298662618683691,
+            "p_value": 0.37840081228739636,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "digit_pct",
+            "correlation": 0.04257569348093532,
+            "p_value": 0.38298011254872244,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": -0.04130293281743297,
+            "p_value": 0.3973766321493306,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "lowercase_pct",
+            "correlation": 0.036365319970191434,
+            "p_value": 0.4562292354415281,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "entropy",
+            "correlation": 0.035032153889143255,
+            "p_value": 0.4729184624940449,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "symbol_pct",
+            "correlation": -0.034595498053363136,
+            "p_value": 0.4784566485267176,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "entropy",
+            "correlation": 0.03262411581713773,
+            "p_value": 0.5038939326745621,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": -0.03171147797317348,
+            "p_value": 0.515906315893515,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "digit_pct",
+            "correlation": -0.030618271071196378,
+            "p_value": 0.5304878228449296,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": 0.030111712862269793,
+            "p_value": 0.5373144330090185,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "digit_pct",
+            "correlation": -0.029062055442351055,
+            "p_value": 0.5515986765971251,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "starts_with_uppercase",
+            "correlation": -0.02741252243093007,
+            "p_value": 0.5744153107197011,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": 0.024794586981242914,
+            "p_value": 0.6115139761689121,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "tempo",
+            "password_characteristic": "starts_with_symbol",
+            "correlation": -0.019297428354934185,
+            "p_value": 0.6926354657922921,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "lowercase_pct",
+            "correlation": -0.01649231484016502,
+            "p_value": 0.7355035638438546,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "mfcc_mean",
+            "password_characteristic": "symbol_pct",
+            "correlation": 0.015419426780545654,
+            "p_value": 0.7521277881111949,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "uppercase_pct",
+            "correlation": -0.012010696427056603,
+            "p_value": 0.805675704969563,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "symbol_pct",
+            "correlation": 0.009872958328214667,
+            "p_value": 0.8397447673110745,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "zero_crossing_rate",
+            "password_characteristic": "uppercase_pct",
+            "correlation": -0.0016159751292650869,
+            "p_value": 0.9735964776817996,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_contrast",
+            "password_characteristic": "entropy",
+            "correlation": 0.0015774059715189543,
+            "p_value": 0.9742264405289883,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "spectral_centroid",
+            "password_characteristic": "lowercase_pct",
+            "correlation": -0.0011117302277988857,
+            "p_value": 0.9818336273260473,
+            "statistically_significant": false
+        },
+        {
+            "audio_feature": "beats_mean",
+            "password_characteristic": "symbol_pct",
+            "correlation": -0.0009823301368379837,
+            "p_value": 0.9839478033693868,
+            "statistically_significant": false
+        }
+    ]
+}

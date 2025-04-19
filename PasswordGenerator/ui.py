@@ -3,25 +3,25 @@ from tkinter import filedialog, messagebox
 import json
 import os
 import sys
+import math
 import librosa
 import numpy as np
+import base64
 
 from audio_feature_extraction import extract_features
 from hash_password_generator import create_hash
-from symmetric_key_generation import derive_key_from_hash
+from symmetric_key_generation import derive_key, new_salt
 from encrypt_decrypt_password import encrypt_password, decrypt_password
-from database_control import initialize_db, store_encrypted_password, get_encrypted_password
+from database_control import initialize_db, store_encrypted_password, get_encrypted_password_by_hash
 from ai_password_generator import AIPasswordGenerator
 
 # --- Set up sys.path for correct folder resolution ---
-# Current file: root/sound-to-security/PasswordGenerator/ui.py
-current_dir = os.path.dirname(__file__)  
-# The project folder ("sound-to-security") is one level up.
+current_dir = os.path.dirname(__file__)
 project_folder = os.path.abspath(os.path.join(current_dir, ".."))
 if project_folder not in sys.path:
     sys.path.append(project_folder)
 
-# Now import candidate generator from AI_Training
+# Import candidate generator from AI_Training.
 try:
     from AI_Training.test_fine_tuned_model import generate_candidate_password
 except ImportError:
@@ -40,9 +40,8 @@ def summarize_array(arr: np.ndarray) -> dict:
 def load_fine_tuned_model_id():
     """
     Loads the fine-tuned model ID from model_info_fold0.txt, which is located
-    in the root directory. The root is the parent of the project folder.
+    in the root directory (the parent of the project folder).
     """
-    # The root folder is one level above the project folder.
     root_folder = os.path.abspath(os.path.join(project_folder, ".."))
     model_info_path = os.path.join(root_folder, "model_info_fold0.txt")
     if not os.path.exists(model_info_path):
@@ -53,14 +52,61 @@ def load_fine_tuned_model_id():
     print(f"Loaded Fine-Tuned Model ID: {model_id}")
     return model_id
 
+def edit_distance(s1, s2):
+    """
+    Computes the Levenshtein edit distance between two strings.
+    """
+    m, n = len(s1), len(s2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = 0 if s1[i-1] == s2[j-1] else 1
+            dp[i][j] = min(dp[i-1][j] + 1,     # deletion
+                           dp[i][j-1] + 1,     # insertion
+                           dp[i-1][j-1] + cost)  # substitution
+    return dp[m][n]
+
+def calculate_entropy(s):
+    """
+    Calculates the Shannon entropy of a string.
+    """
+    if not s:
+        return 0
+    freq = {}
+    for char in s:
+        freq[char] = freq.get(char, 0) + 1
+    entropy = 0
+    for count in freq.values():
+        p = count / len(s)
+        entropy -= p * math.log2(p)
+    return entropy
+
+def log_security_test_result(test_result, log_filename="security_test_results.json"):
+    """
+    Appends the test result (a dictionary) to a JSON file.
+    """
+    try:
+        with open(log_filename, "r") as f:
+            results = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        results = []
+    results.append(test_result)
+    with open(log_filename, "w") as f:
+        json.dump(results, f, indent=4)
+    print(f"Test result saved to {log_filename}")
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Secure Melody-Based Account Manager")
-        self.geometry("600x500")
+        self.geometry("600x550")
         self.configure(bg="#282c34")
-        initialize_db()  # Initialize the database
-        print("Database initialized.")
+        # No database initialization is needed for the test mode
+        print("UI initialized.")
         self.create_main_menu()
 
     def create_main_menu(self):
@@ -152,14 +198,14 @@ class App(tk.Tk):
             
             audio_hash = create_hash(features)
             print(f"[Login] Generated Hash: {audio_hash}")
-            key = derive_key_from_hash(audio_hash)
-            print("[Login] Derived encryption key from hash.")
-            
-            stored_enc_pw = get_encrypted_password(username, audio_hash)
-            if stored_enc_pw:
+            # Salted lookup: fetch salt & encrypted password
+            stored_username, b64_salt, stored_enc_pw = get_encrypted_password_by_hash(audio_hash)
+            if stored_enc_pw and stored_username == username:
+                salt_bytes = base64.b64decode(b64_salt)
+                key = derive_key(audio_hash, salt_bytes)
                 decrypted_password = decrypt_password(stored_enc_pw, key)
-                print(f"[Login] Retrieved stored password (hidden from UI).")
-                messagebox.showinfo("Login Successful", f"Welcome, {username}!")
+                print(f"[Login] Retrieved stored password for user {stored_username}.")
+                messagebox.showinfo("Login Successful", f"Welcome, {self.username_entry.get().strip()}!")
             else:
                 print("[Login] No matching record found for provided username and audio.")
                 messagebox.showerror("Error", "No account found for the provided username and audio.\nPlease create an account first.")
@@ -225,11 +271,14 @@ class App(tk.Tk):
             
             audio_hash = create_hash(features)
             print(f"[Account Creation] Generated Hash: {audio_hash}")
-            key = derive_key_from_hash(audio_hash)
-            print("[Account Creation] Derived encryption key from hash.")
-            
-            stored_enc_pw = get_encrypted_password(username, audio_hash)
-            if stored_enc_pw:
+            # Generate per‐account salt & derive key
+            salt_bytes = new_salt()
+            key = derive_key(audio_hash, salt_bytes)
+            print("[Account Creation] Derived encryption key from salt and hash.")
+
+            # Check existing record via salted lookup
+            stored_username, b64_salt, stored_enc_pw = get_encrypted_password_by_hash(audio_hash)
+            if stored_enc_pw and stored_username == username:
                 print("[Account Creation] Account already exists for this username and audio.")
                 messagebox.showerror("Error", "An account already exists for the provided username and audio.\nPlease login.")
                 return
@@ -242,7 +291,12 @@ class App(tk.Tk):
                 return
             
             enc_password = encrypt_password(password, key)
-            store_encrypted_password(username, audio_hash, enc_password)
+            store_encrypted_password(
+                username=username,
+                audio_hash=audio_hash,
+                salt=base64.b64encode(salt_bytes).decode("utf-8"),
+                encrypted_password=enc_password
+            )
             print(f"[Account Creation] Generated new password: {password}")
             print(f"[Account Creation] Account created for '{username}'.")
             messagebox.showinfo("Account Created", f"Account created for {username}.")
@@ -250,7 +304,7 @@ class App(tk.Tk):
         except Exception as e:
             print(f"[Account Creation] Error: {str(e)}")
             messagebox.showerror("Error", f"Account creation failed: {str(e)}")
-    
+
     def show_test_security(self):
         for widget in self.winfo_children():
             widget.destroy()
@@ -264,13 +318,14 @@ class App(tk.Tk):
                  font=("Helvetica", 18, "bold"),
                  fg="#61dafb", bg="#282c34").pack(pady=20)
         tk.Label(frame,
-                 text="Enter Username:",
+                 text="Number of Candidates:",
                  font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=5)
-        self.test_username_entry = tk.Entry(frame, font=("Helvetica", 12))
-        self.test_username_entry.pack(pady=5)
+        self.candidate_count_entry = tk.Entry(frame, font=("Helvetica", 12))
+        self.candidate_count_entry.insert(0, "10")
+        self.candidate_count_entry.pack(pady=5)
         
         tk.Button(frame,
-                  text="Select Audio & Run Brute Force Test",
+                  text="Select Audio & Run Test",
                   font=("Helvetica", 14),
                   command=self.test_password_security,
                   bg="#61dafb", fg="#282c34").pack(pady=20)
@@ -282,13 +337,15 @@ class App(tk.Tk):
     
     def test_password_security(self):
         """
-        Uses the fine-tuned AI model (via the candidate generator) to generate 10 candidate passwords
-        from the provided audio file, then compares each candidate to the stored password.
-        Prints the generated hash, stored password, each candidate, and the final match count.
+        Generates a base secure password using the same pipeline as account creation,
+        then uses the fine-tuned candidate generator to create candidate passwords.
+        It computes the edit distances for each candidate relative to the base password,
+        calculates the Shannon entropy of the base password, and then saves the test results to a JSON file.
         """
-        username = self.test_username_entry.get().strip()
-        if not username:
-            messagebox.showerror("Error", "Please enter your username for testing.")
+        try:
+            candidate_count = int(self.candidate_count_entry.get().strip())
+        except ValueError:
+            messagebox.showerror("Error", "Number of candidates must be an integer.")
             return
         
         file_path = filedialog.askopenfilename(
@@ -299,7 +356,7 @@ class App(tk.Tk):
             return
         
         try:
-            print(f"\n[Test] Username: '{username}' selected audio file: {file_path}")
+            print(f"\n[Test] Selected audio file: {file_path}")
             y, sr = librosa.load(file_path, sr=None)
             y = np.squeeze(y)
             print("[Test] Audio loaded successfully.")
@@ -313,36 +370,49 @@ class App(tk.Tk):
             
             audio_hash = create_hash(features)
             print(f"[Test] Generated Hash: {audio_hash}")
-            key = derive_key_from_hash(audio_hash)
-            print("[Test] Derived encryption key from hash.")
             
-            stored_enc_pw = get_encrypted_password(username, audio_hash)
-            if not stored_enc_pw:
-                print("[Test] No matching account record found for testing.")
-                messagebox.showerror("Error", "No account found for the provided username and audio.\nPlease create an account first.")
-                return
-            
-            stored_password = decrypt_password(stored_enc_pw, key)
-            print(f"[Test] Stored password for '{username}': {stored_password}")
+            # Generate the base secure password on the fly using the standard generator.
+            password_gen = AIPasswordGenerator()
+            base_password = password_gen.generate_password(features)
+            print(f"[Test] Base secure password: {base_password}")
             
             model_id = load_fine_tuned_model_id()
-            password_gen = AIPasswordGenerator()
+            candidates = []
             match_count = 0
-            print("[Test] Generating 10 candidate passwords using the fine-tuned model:")
-            for i in range(1, 11):
+            edit_distances = []
+            print(f"[Test] Generating {candidate_count} candidate passwords using the fine-tuned model:")
+            for i in range(1, candidate_count + 1):
                 candidate = generate_candidate_password(features, model_id)
-                print(f"Candidate {i}: {candidate}")
-                if candidate == stored_password:
-                    print(f"*** Candidate {i} matches the stored password! ***")
+                candidates.append(candidate)
+                distance = edit_distance(candidate, base_password)
+                edit_distances.append(distance)
+                print(f"Candidate {i}: {candidate} | Edit Distance: {distance}")
+                if candidate == base_password:
+                    print(f"*** Candidate {i} exactly matches the secure password! ***")
                     match_count += 1
             
-            print(f"[Test] Out of 10 attempts, {match_count} candidate(s) matched the stored password.")
+            entropy = calculate_entropy(base_password)
+            print(f"[Test] Computed Shannon entropy of the secure password: {entropy:.2f} bits")
+            print(f"[Test] Out of {candidate_count} attempts, {match_count} candidate(s) matched the secure password.")
             messagebox.showinfo("Security Test Completed",
-                                f"Brute Force Test Complete:\n{match_count} out of 10 candidates matched the stored password.")
+                                f"Brute Force Test Complete:\n{match_count} out of {candidate_count} candidates matched.\nEntropy: {entropy:.2f} bits")
+            
+            # Prepare the JSON record (no account dependency here)
+            test_result = {
+                "audio_hash": audio_hash,
+                "base_password": base_password,
+                "candidate_count": candidate_count,
+                "candidates": candidates,
+                "match_count": match_count,
+                "edit_distances": edit_distances,
+                "entropy": entropy
+            }
+            log_security_test_result(test_result)
         except Exception as e:
             print(f"[Test] Error: {str(e)}")
             messagebox.showerror("Error", f"Security test failed: {str(e)}")
 
 if __name__ == "__main__":
+    initialize_db()
     app = App()
     app.mainloop()

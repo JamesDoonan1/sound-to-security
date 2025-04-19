@@ -1,7 +1,4 @@
-# In AI_Training/test_fine_tuned_model.py
-
 from openai import OpenAI
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,7 +16,7 @@ Based on these summarized audio characteristics:
 - Percussive Components mean: {}
 - Zero-Crossing Rate mean: {}
 - Chroma Features (CENS) mean: {}
-Generate the corresponding identifier and secure access code. The access code should be a strong password, not None.
+Generate a secure access code. The access code should be a strong password, not None.
 """.format(
     features.get("MFCCs_mean", "N/A"),
     features.get("Spectral_Centroid_mean", "N/A"),

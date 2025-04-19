@@ -1,0 +1,142 @@
+[
+    {
+        "file_name": "01 - Around the World.mp3",
+        "file_size_bytes": 9551182,
+        "timing": {
+            "audio_loading": 3.107490062713623,
+            "feature_extraction": 29.035762071609497,
+            "hash_generation": 0.3366866111755371,
+            "key_derivation": 0.06886434555053711,
+            "password_generation": 5.942198753356934,
+            "password_encryption": 0.0016515254974365234,
+            "total_processing": 38.492653369903564
+        },
+        "audio_length_seconds": 238.776
+    },
+    {
+        "file_name": "01 - By the Way.mp3",
+        "file_size_bytes": 8718851,
+        "timing": {
+            "audio_loading": 1.026688575744629,
+            "feature_extraction": 23.811742067337036,
+            "hash_generation": 0.30531811714172363,
+            "key_derivation": 0.04780220985412598,
+            "password_generation": 0.5904231071472168,
+            "password_encryption": 0.000118255615234375,
+            "total_processing": 25.782092332839966
+        },
+        "audio_length_seconds": 217.968
+    },
+    {
+        "file_name": "01 - Celebration.mp3",
+        "file_size_bytes": 12608178,
+        "timing": {
+            "audio_loading": 1.3507206439971924,
+            "feature_extraction": 33.45747637748718,
+            "hash_generation": 0.4118764400482178,
+            "key_derivation": 0.053868770599365234,
+            "password_generation": 0.7273368835449219,
+            "password_encryption": 0.000362396240234375,
+            "total_processing": 36.001641511917114
+        },
+        "audio_length_seconds": 313.53333333333336
+    },
+    {
+        "file_name": "01 - Closer.mp3",
+        "file_size_bytes": 9557583,
+        "timing": {
+            "audio_loading": 1.0673630237579346,
+            "feature_extraction": 25.11215353012085,
+            "hash_generation": 0.312114953994751,
+            "key_derivation": 0.05581855773925781,
+            "password_generation": 0.7076461315155029,
+            "password_encryption": 0.00045371055603027344,
+            "total_processing": 27.255549907684326
+        },
+        "audio_length_seconds": 237.48
+    },
+    {
+        "file_name": "01 - Dani California.mp3",
+        "file_size_bytes": 11290712,
+        "timing": {
+            "audio_loading": 1.3853449821472168,
+            "feature_extraction": 33.054458141326904,
+            "hash_generation": 0.422527551651001,
+            "key_derivation": 0.05460214614868164,
+            "password_generation": 0.6501517295837402,
+            "password_encryption": 0.0004508495330810547,
+            "total_processing": 35.567535400390625
+        },
+        "audio_length_seconds": 282.264
+    },
+    {
+        "file_name": "01 - Desecration Smile.mp3",
+        "file_size_bytes": 12076951,
+        "timing": {
+            "audio_loading": 1.4550189971923828,
+            "feature_extraction": 35.10375356674194,
+            "hash_generation": 0.422637939453125,
+            "key_derivation": 0.05029654502868652,
+            "password_generation": 0.6630613803863525,
+            "password_encryption": 0.0003371238708496094,
+            "total_processing": 37.69510555267334
+        },
+        "audio_length_seconds": 301.92
+    },
+    {
+        "file_name": "01 - Feel Good Hit Of The Summer.mp3",
+        "file_size_bytes": 6678976,
+        "timing": {
+            "audio_loading": 0.7566120624542236,
+            "feature_extraction": 16.8416531085968,
+            "hash_generation": 0.2240910530090332,
+            "key_derivation": 0.05110430717468262,
+            "password_generation": 0.8482887744903564,
+            "password_encryption": 0.00042319297790527344,
+            "total_processing": 18.722172498703003
+        },
+        "audio_length_seconds": 165.4
+    },
+    {
+        "file_name": "01 - Fight Like a Brave.mp3",
+        "file_size_bytes": 9351528,
+        "timing": {
+            "audio_loading": 1.1193811893463135,
+            "feature_extraction": 26.35456371307373,
+            "hash_generation": 0.33260488510131836,
+            "key_derivation": 0.050575971603393555,
+            "password_generation": 0.6768314838409424,
+            "password_encryption": 0.00040721893310546875,
+            "total_processing": 28.534364461898804
+        },
+        "audio_length_seconds": 233.784
+    },
+    {
+        "file_name": "01 - Go With The Flow.mp3",
+        "file_size_bytes": 7199322,
+        "timing": {
+            "audio_loading": 0.8281981945037842,
+            "feature_extraction": 18.02301812171936,
+            "hash_generation": 0.23813915252685547,
+            "key_derivation": 0.05549430847167969,
+            "password_generation": 0.602757453918457,
+            "password_encryption": 0.0003151893615722656,
+            "total_processing": 19.74792242050171
+        },
+        "audio_length_seconds": 178.48
+    },
+    {
+        "file_name": "01 - Good Time Boys.mp3",
+        "file_size_bytes": 12068310,
+        "timing": {
+            "audio_loading": 1.4495162963867188,
+            "feature_extraction": 35.72225737571716,
+            "hash_generation": 0.4373002052307129,
+            "key_derivation": 0.052765846252441406,
+            "password_generation": 0.7383816242218018,
+            "password_encryption": 0.0002148151397705078,
+            "total_processing": 38.40043616294861
+        },
+        "audio_length_seconds": 301.704
+    }
+]

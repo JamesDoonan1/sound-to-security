@@ -1,0 +1,7 @@
+,false_acceptance_rate,false_rejection_rate,user_convenience,security_level,spoofing_resistance,privacy_concerns
+Audio Password (Your System),Variable (depends on AI accuracy),Variable (depends on audio similarity),Medium (requires audio),Medium-High,High (requires specific audio),Low (audio not stored)
+Fingerprint,0.1% - 1%,1% - 5%,High,Medium,Medium-High,High (stored biometric)
+Face Recognition,0.1% - 5%,2% - 15%,High,Medium,Low-Medium,High (stored biometric)
+Voice Recognition,2% - 5%,5% - 10%,Medium,Medium-Low,Low,High (stored biometric)
+Iris Scan,0.0001% - 0.01%,0.5% - 2%,Low (requires special reader),Very High,High,High (stored biometric)
+Traditional Password,N/A,N/A (except forgotten passwords),Low (need to remember),Variable,Low-Medium,Low (if hashed properly)

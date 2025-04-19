@@ -1,11 +1,10 @@
 import json
 import os
-import random
 from sklearn.model_selection import train_test_split
 
-# Constants - Updated to use audio_data.json with 400 samples
+# Constants
 PROJECT_ROOT = "/home/cormacgeraghty/Desktop/Project Code"
-INPUT_JSON = os.path.join(PROJECT_ROOT, "audio_data.json")  # Using the larger dataset
+INPUT_JSON = os.path.join(PROJECT_ROOT, "audio_data.json")
 OUTPUT_JSONL_TRAIN = os.path.join(PROJECT_ROOT, "train_data.jsonl")
 OUTPUT_JSONL_VAL = os.path.join(PROJECT_ROOT, "val_data.jsonl")
 VAL_SPLIT = 0.1  # 10% of data for validation
@@ -52,7 +51,13 @@ def convert_to_jsonl(input_file, output_train, output_val):
                     valid_data.append(entry)
         
         print(f"Found {len(valid_data)} valid entries with complete data")
-        
+
+        if not valid_data:
+            print("No valid entries found. Writing empty JSONL files.")
+            open(output_train.replace(".jsonl", "_fold0.jsonl"), "w").close()
+            open(output_val.replace(".jsonl", "_fold0.jsonl"), "w").close()
+            return
+
         # Split data into training and validation sets
         train_data, val_data = train_test_split(valid_data, test_size=VAL_SPLIT, random_state=42)
         
