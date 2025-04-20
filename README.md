@@ -13,7 +13,7 @@
 This project explores a novel approach to password authentication by leveraging voice biometrics and AI to generate secure passwords. Using vocal inputs such as speech or humming, the system extracts acoustic features and feeds them to an AI model (Claude AI) to generate high-entropy passwords that are both secure and tied to the user's voice characteristics. These AI-generated passwords are systematically compared against traditional user-created passwords in terms of entropy, complexity, and memorability. All passwords are then rigorously tested against brute-force, dictionary, and AI-based attacks to assess and compare their relative security strength, demonstrating how the AI-vocal approach offers significant advantages over conventional password creation methods.   
 
 ### Demo Video  
-
+https://youtu.be/hbXm5-8Gyv8
 
 ### Dissertation
 The full dissertation PDF is available in the root of this repository: Dissertation_JamesDoonan_2025.pdf

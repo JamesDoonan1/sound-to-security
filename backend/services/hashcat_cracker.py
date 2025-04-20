@@ -108,7 +108,7 @@ def crack_password_with_hashcat(hash_type="0", attack_mode="3", password_hash=No
             cracked_password = check_result.stdout.strip().split(":")[-1]  # Extract password
             return True, cracked_password
         else:
-            return False, " Password not cracked within the time limit or hash type not supported!"
+            return False, " Password not cracked within the time limit"
     
     except subprocess.TimeoutExpired:
         return False, " Hashcat cracking timed out (30s limit)"
