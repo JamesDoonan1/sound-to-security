@@ -10,7 +10,13 @@
 
 ## Project Overview
 
-This project explores a novel approach to password authentication by leveraging voice biometrics and AI to generate secure, memorable passwords. Using vocal inputs such as speech or humming, the system extracts acoustic features and feeds them to an AI model (Claude AI) to generate high-entropy passwords. These are then tested against brute-force, dictionary, and AI-based attacks.
+This project explores a novel approach to password authentication by leveraging voice biometrics and AI to generate secure passwords. Using vocal inputs such as speech or humming, the system extracts acoustic features and feeds them to an AI model (Claude AI) to generate high-entropy passwords that are both secure and tied to the user's voice characteristics. These AI-generated passwords are systematically compared against traditional user-created passwords in terms of entropy, complexity, and memorability. All passwords are then rigorously tested against brute-force, dictionary, and AI-based attacks to assess and compare their relative security strength, demonstrating how the AI-vocal approach offers significant advantages over conventional password creation methods.   
+
+### Demo Video  
+
+
+### Dissertation
+The full dissertation PDF is available in the root of this repository: Dissertation_JamesDoonan_2025.pdf
 
 ---
 
@@ -65,7 +71,15 @@ sound-to-security/
 
 3. Configure your API keys (for Claude and GPT-4) in `.env`.
 
-4. Run the app:
+4. Running the application (requires two terminal windows):
+   
+   Terminal 1 - Start the backend server:
+   ```bash
+   cd backend
+   python app.py
+   ```
+   
+   Terminal 2 - Start the GUI (from project root):
    ```bash
    python main.py
    ```
