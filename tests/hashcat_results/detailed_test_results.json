@@ -5,7 +5,7 @@
     "hostname": "DI13-5378",
     "python_version": "3.12.2"
   },
-  "test_start_time": "2025-04-16 22:16:04",
+  "test_start_time": "2025-04-21 12:19:18",
   "benchmark_metrics": {
     "weak1": {
       "password": "password123",
@@ -165,8 +165,8 @@
     "test1": {
       "hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
       "attack": "Basic Dictionary Attack",
-      "start_time": "2025-04-16 22:16:10",
-      "elapsed_seconds": 0.01002192497253418,
+      "start_time": "2025-04-21 12:19:18",
+      "elapsed_seconds": 0.0,
       "cracked": true,
       "timeout": 30,
       "recovered_password": "password",
@@ -175,8 +175,8 @@
     "test2": {
       "hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
       "attack": "Basic Dictionary Attack",
-      "start_time": "2025-04-16 22:16:15",
-      "elapsed_seconds": 0.008106231689453125,
+      "start_time": "2025-04-21 12:19:18",
+      "elapsed_seconds": 0.0,
       "cracked": true,
       "timeout": 30,
       "recovered_password": "123456",
@@ -185,18 +185,18 @@
     "test3": {
       "hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
       "attack": "Basic Dictionary Attack",
-      "start_time": "2025-04-16 22:16:20",
-      "elapsed_seconds": 0.20900511741638184,
-      "cracked": false,
+      "start_time": "2025-04-21 12:19:18",
+      "elapsed_seconds": 0.00040435791015625,
+      "cracked": true,
       "timeout": 30,
-      "error": "Not cracked after trying 49996 passwords",
-      "message": "Not cracked after trying 49996 passwords"
+      "recovered_password": "admin",
+      "message": "Cracked: admin"
     },
     "test4": {
       "hash": "65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5",
       "attack": "Basic Dictionary Attack",
-      "start_time": "2025-04-16 22:16:25",
-      "elapsed_seconds": 0.0020487308502197266,
+      "start_time": "2025-04-21 12:19:18",
+      "elapsed_seconds": 0.0,
       "cracked": true,
       "timeout": 30,
       "recovered_password": "qwerty",
@@ -205,8 +205,8 @@
     "test5": {
       "hash": "1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032",
       "attack": "Basic Dictionary Attack",
-      "start_time": "2025-04-16 22:16:30",
-      "elapsed_seconds": 0.01630687713623047,
+      "start_time": "2025-04-21 12:19:18",
+      "elapsed_seconds": 0.0,
       "cracked": true,
       "timeout": 30,
       "recovered_password": "letmein",
@@ -218,8 +218,8 @@
       {
         "hash": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:03",
-        "elapsed_seconds": 0.02208685874938965,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.0,
         "cracked": true,
         "timeout": 30,
         "recovered_password": "password123",
@@ -230,8 +230,8 @@
       {
         "hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:09",
-        "elapsed_seconds": 0.01008749008178711,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.0,
         "cracked": true,
         "timeout": 30,
         "recovered_password": "123456",
@@ -242,50 +242,50 @@
       {
         "hash": "0e44ce7308af2b3de5232e4616403ce7d49ba2aec83f79c196409556422a4927",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:15",
-        "elapsed_seconds": 0.12371373176574707,
-        "cracked": true,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.0017325878143310547,
+        "cracked": false,
         "timeout": 30,
-        "recovered_password": "P@ssw0rd!",
-        "message": "Cracked: P@ssw0rd!"
+        "error": "Not cracked after trying 125 passwords",
+        "message": "Not cracked after trying 125 passwords"
       }
     ],
     "medium2": [
       {
         "hash": "9a741ef50ae1a345e1990144b51b02525feba74042657df07be2e9d5e709b301",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:20",
-        "elapsed_seconds": 0.20037150382995605,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.00099945068359375,
         "cracked": false,
         "timeout": 30,
-        "error": "Not cracked after trying 49996 passwords",
-        "message": "Not cracked after trying 49996 passwords"
+        "error": "Not cracked after trying 125 passwords",
+        "message": "Not cracked after trying 125 passwords"
       }
     ],
     "strong1": [
       {
         "hash": "17eb4f75225398214fb2d57894f08a06a86185dd9e66e8663e9c50a81d4d0dc3",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:28",
-        "elapsed_seconds": 0.15500211715698242,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.0007565021514892578,
         "cracked": false,
         "timeout": 30,
-        "error": "Not cracked after trying 49996 passwords",
-        "message": "Not cracked after trying 49996 passwords"
+        "error": "Not cracked after trying 125 passwords",
+        "message": "Not cracked after trying 125 passwords"
       }
     ],
     "very_strong": [
       {
         "hash": "6885cf8c7dc806ae95cc6059f939435a3ccf2da9724f12cafb6430d429b61105",
         "attack": "Basic Dictionary Attack",
-        "start_time": "2025-04-16 22:20:36",
-        "elapsed_seconds": 0.3471999168395996,
+        "start_time": "2025-04-21 12:19:19",
+        "elapsed_seconds": 0.0014786720275878906,
         "cracked": false,
         "timeout": 30,
-        "error": "Not cracked after trying 49996 passwords",
-        "message": "Not cracked after trying 49996 passwords"
+        "error": "Not cracked after trying 125 passwords",
+        "message": "Not cracked after trying 125 passwords"
       }
     ]
   },
-  "test_end_time": "2025-04-16 22:20:36"
+  "test_end_time": "2025-04-21 12:19:19"
 }

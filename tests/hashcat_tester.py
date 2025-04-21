@@ -8,8 +8,14 @@ from datetime import datetime
 
 # Set up paths
 HASHCAT_PATH = r"C:\Users\James Doonan\Downloads\hashcat-6.2.6\hashcat-6.2.6\hashcat.exe"
-RESULT_FILE = os.path.join(os.path.dirname(__file__), "password_security_results.txt")
-DETAILED_JSON = os.path.join(os.path.dirname(__file__), "detailed_test_results.json")
+# Results directory
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "hashcat_results")
+os.makedirs(RESULTS_DIR, exist_ok=True)  # Ensure the directory exists
+
+# Updated file paths
+RESULT_FILE = os.path.join(RESULTS_DIR, "password_security_results.txt")
+DETAILED_JSON = os.path.join(RESULTS_DIR, "detailed_test_results.json")
+
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend", "data"))
 
 # Ensure directories exist
