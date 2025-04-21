@@ -1,4 +1,4 @@
-# sound-to-security
+# Sound-To-Security
  From Sound to Security: Evaluating Audio-Based Passwords against AI Cracking
 
 ## Project Overview
@@ -12,8 +12,8 @@ Both approaches are rigorously tested against brute-force attacks, dictionary at
 
 ## Demo Video of Integrated Projects
 
-## Video of Voice-Based passwords (James Doonan)
-https://youtu.be/hbXm5-8Gyv8
+## Demo Video of Voice-Based passwords (James Doonan)
+https://youtu.be/EU1PWU_Si1w   
 
 ## Demo Video of Audio-Based Passwords (Cormac Geraghty)
 
