@@ -3,7 +3,9 @@ This script analyzes correlations between audio features and password characteri
 to demonstrate how audio properties influence the generated passwords.
 """
 
-import os
+from password_analysis_utils import (
+    get_project_paths, save_json_results, save_plot
+)
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,40 +13,31 @@ import seaborn as sns
 from scipy.stats import pearsonr
 import pandas as pd
 
-def ensure_test_results_dir():
-    """Create TestResults directory if it doesn't exist"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    test_results_dir = os.path.join(current_dir, "TestResults")
-    if not os.path.exists(test_results_dir):
-        os.makedirs(test_results_dir)
-        print(f"Created TestResults directory at: {test_results_dir}")
-    return test_results_dir
-
-def calculate_entropy(password):
-    """
-    Calculate Shannon entropy of a password.
-    """
-    if not password:
-        return 0.0
+def extract_audio_features(entry):
+    """Extracts relevant audio features from a data entry."""
+    features = entry.get("features", {})
     
-    # Count character frequencies
-    length = len(password)
-    char_counts = {}
-    for char in password:
-        char_counts[char] = char_counts.get(char, 0) + 1
+    # Extract key audio features that might influence password generation
+    result = {}
     
-    # Calculate entropy
-    entropy = 0
-    for count in char_counts.values():
-        p_x = count / length
-        entropy -= p_x * np.log2(p_x)
+    # Extract mean values for various audio features
+    feature_keys = {
+        "Tempo": "tempo",
+        "Spectral Centroid": "spectral_centroid",
+        "MFCCs": "mfcc_mean",
+        "Zero-Crossing Rate": "zero_crossing_rate",
+        "Beats": "beats_mean",
+        "Spectral Contrast": "spectral_contrast"
+    }
     
-    return entropy
+    for orig_key, new_key in feature_keys.items():
+        if orig_key in features and "mean" in features[orig_key]:
+            result[new_key] = features[orig_key]["mean"]
+    
+    return result
 
 def analyze_password_characteristics(password):
-    """
-    Extracts various characteristics from a password.
-    """
+    """Extracts various characteristics from a password."""
     if not password:
         return None
     
@@ -55,6 +48,24 @@ def analyze_password_characteristics(password):
     symbol_count = sum(1 for c in password if not c.isalnum())
     
     length = len(password)
+    
+    def calculate_entropy(s):
+        """Calculate Shannon entropy of a string."""
+        if not s:
+            return 0.0
+        
+        # Count character frequencies
+        char_counts = {}
+        for char in s:
+            char_counts[char] = char_counts.get(char, 0) + 1
+        
+        # Calculate entropy
+        entropy = 0
+        for count in char_counts.values():
+            p_x = count / length
+            entropy -= p_x * np.log2(p_x)
+        
+        return entropy
     
     return {
         "length": length,
@@ -71,41 +82,8 @@ def analyze_password_characteristics(password):
         "starts_with_symbol": not password[0].isalnum() if password else False
     }
 
-def extract_audio_features(entry):
-    """
-    Extracts relevant audio features from a data entry.
-    """
-    features = entry.get("features", {})
-    
-    # Extract key audio features that might influence password generation
-    result = {}
-    
-    # Extract mean values for various audio features
-    if "Tempo" in features and "mean" in features["Tempo"]:
-        result["tempo"] = features["Tempo"]["mean"]
-    
-    if "Spectral Centroid" in features and "mean" in features["Spectral Centroid"]:
-        result["spectral_centroid"] = features["Spectral Centroid"]["mean"]
-    
-    if "MFCCs" in features and "mean" in features["MFCCs"]:
-        result["mfcc_mean"] = features["MFCCs"]["mean"]
-    
-    if "Zero-Crossing Rate" in features and "mean" in features["Zero-Crossing Rate"]:
-        result["zero_crossing_rate"] = features["Zero-Crossing Rate"]["mean"]
-    
-    if "Beats" in features and "mean" in features["Beats"]:
-        result["beats_mean"] = features["Beats"]["mean"]
-    
-    # Extract additional features if they exist
-    if "Spectral Contrast" in features and "mean" in features["Spectral Contrast"]:
-        result["spectral_contrast"] = features["Spectral Contrast"]["mean"]
-    
-    return result
-
 def analyze_audio_feature_correlations(audio_data_path):
-    """
-    Analyzes correlations between audio features and password characteristics.
-    """
+    """Analyzes correlations between audio features and password characteristics."""
     print(f"Loading data from {audio_data_path}...")
     
     try:
@@ -155,9 +133,7 @@ def analyze_audio_feature_correlations(audio_data_path):
         return {"error": str(e)}
 
 def calculate_correlation_matrix(correlations_data):
-    """
-    Calculates the correlation matrix between audio features and password characteristics.
-    """
+    """Calculates the correlation matrix between audio features and password characteristics."""
     # Convert to DataFrame for easier analysis
     df = pd.DataFrame(correlations_data)
     
@@ -218,9 +194,7 @@ def calculate_correlation_matrix(correlations_data):
     }
 
 def visualize_correlations(correlation_results, output_path="audio_feature_correlations.png"):
-    """
-    Creates visualizations of the correlations between audio features and password characteristics.
-    """
+    """Creates visualizations of the correlations between audio features and password characteristics."""
     if "error" in correlation_results:
         print(f"Error: {correlation_results['error']}")
         return
@@ -255,7 +229,7 @@ def visualize_correlations(correlation_results, output_path="audio_feature_corre
                 vmin=-1, vmax=1, center=0, mask=mask, fmt=".2f")
     plt.title('Statistically Significant Correlations (p < 0.05)')
     
-    # 3. Find the strongest correlation for detailed plot
+    # Find strongest correlation for detailed plot
     strongest_corr = 0
     strongest_feature = ""
     strongest_char = ""
@@ -299,7 +273,7 @@ def visualize_correlations(correlation_results, output_path="audio_feature_corre
             plt.text(0.5, 0.5, f'Error creating scatter plot: {str(e)}', 
                     horizontalalignment='center', verticalalignment='center')
     
-    # 4. Key Findings Box
+    # Key Findings Box
     plt.subplot(2, 2, 4)
     plt.axis('off')
     
@@ -351,109 +325,13 @@ def visualize_correlations(correlation_results, output_path="audio_feature_corre
     
     plt.text(0.05, 0.95, findings_text, fontsize=12, verticalalignment='top')
     
-    # Adjust layout and save
-    plt.tight_layout()
-    test_results_dir = ensure_test_results_dir()
-    plt.savefig(os.path.join(test_results_dir, output_path))
-    print(f"Created visualization: {output_path}")
-    
-    # Create additional scatter plots for top correlations
-    if len(correlations_flat) >= 3:
-        try:
-            # Create scatter plots for top 3 correlations
-            fig, axs = plt.subplots(1, 3, figsize=(18, 6))
-            fig.suptitle('Top 3 Audio Feature-Password Characteristic Correlations', fontsize=16)
-            
-            for i in range(3):
-                if i < len(correlations_flat):
-                    feature, char, corr, p_value = correlations_flat[i]
-                    
-                    # Convert to numeric safely
-                    x = pd.to_numeric(df[feature], errors='coerce')
-                    y = pd.to_numeric(df[char], errors='coerce')
-                    
-                    # Remove NaN values
-                    mask = ~np.isnan(x) & ~np.isnan(y)
-                    
-                    if mask.sum() > 1:  # Need at least 2 points
-                        axs[i].scatter(x[mask], y[mask], alpha=0.5)
-                        axs[i].set_title(f'{feature.replace("_", " ").title()} vs {char.replace("_", " ").title()}\nr={corr:.2f}, p={p_value:.4f}')
-                        axs[i].set_xlabel(feature.replace("_", " ").title())
-                        axs[i].set_ylabel(char.replace("_", " ").title())
-                        
-                        # Add trend line
-                        z = np.polyfit(x[mask], y[mask], 1)
-                        p = np.poly1d(z)
-                        axs[i].plot(x[mask], p(x[mask]), "r--", alpha=0.8)
-                    else:
-                        axs[i].text(0.5, 0.5, 'Insufficient data', 
-                                   horizontalalignment='center', verticalalignment='center',
-                                   transform=axs[i].transAxes)
-            
-            plt.tight_layout()
-            plt.savefig(os.path.join(test_results_dir, "top_correlations_scatter.png"))
-            print("Created visualization: top_correlations_scatter.png")
-        except Exception as e:
-            print(f"Error creating scatter plots: {e}")
-
-def save_correlation_results(correlation_results, output_file="audio_feature_correlations.json"):
-    """
-    Saves correlation results to a JSON file.
-    """
-    if "error" in correlation_results:
-        test_results_dir = ensure_test_results_dir()
-        with open(os.path.join(test_results_dir, output_file), 'w') as f:
-            json.dump({"error": correlation_results["error"]}, f, indent=4)
-        return
-    
-    # Convert DataFrames to serializable format
-    serializable_results = {
-        "correlation_matrix": correlation_results["correlation_matrix"].to_dict(),
-        "p_values_matrix": correlation_results["p_values_matrix"].to_dict(),
-        
-        # Extract key statistics
-        "strongest_correlations": []
-    }
-    
-    # Find top correlations
-    correlation_matrix = correlation_results["correlation_matrix"]
-    p_values_matrix = correlation_results["p_values_matrix"]
-    
-    for feature in correlation_matrix.index:
-        for char in correlation_matrix.columns:
-            corr_value = correlation_matrix.loc[feature, char]
-            p_value = p_values_matrix.loc[feature, char]
-            
-            if not np.isnan(corr_value) and not np.isnan(p_value):
-                serializable_results["strongest_correlations"].append({
-                    "audio_feature": feature,
-                    "password_characteristic": char,
-                    "correlation": float(corr_value),
-                    "p_value": float(p_value),
-                    "statistically_significant": bool(p_value < 0.05)
-                })
-    
-    # Sort by absolute correlation
-    serializable_results["strongest_correlations"].sort(key=lambda x: abs(x["correlation"]), reverse=True)
-    
-    test_results_dir = ensure_test_results_dir()
-    with open(os.path.join(test_results_dir, output_file), 'w') as f:
-        json.dump(serializable_results, f, indent=4)
-    
-    print(f"Correlation results saved to {output_file}")
+    # Save the figure
+    save_plot(fig, output_path)
 
 def main():
-    # Get the current script directory (PasswordAnalysis folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Navigate to parent directory (sound-to-security)
-    parent_dir = os.path.dirname(current_dir)
-    
-    # Navigate to root directory (outside sound-to-security)
-    root_dir = os.path.dirname(parent_dir)
-    
-    # Path to your audio data
-    audio_data_path = os.path.join(root_dir, "audio_data.json")
+    # Get paths
+    paths = get_project_paths()
+    audio_data_path = paths["audio_data_path"]
     
     print("Starting audio feature correlation analysis...")
     
@@ -467,19 +345,33 @@ def main():
     # Calculate correlations
     correlation_results = calculate_correlation_matrix(correlations_data)
     
+    # Create a copy for visualization and printing (keeps DataFrames intact)
+    visualization_results = correlation_results.copy()
+    
+    # Convert DataFrames to dictionaries for JSON serialization
+    if isinstance(correlation_results["correlation_matrix"], pd.DataFrame):
+        correlation_results["correlation_matrix"] = correlation_results["correlation_matrix"].to_dict()
+    if isinstance(correlation_results["p_values_matrix"], pd.DataFrame):
+        correlation_results["p_values_matrix"] = correlation_results["p_values_matrix"].to_dict()
+    if isinstance(correlation_results["data_frame"], pd.DataFrame):
+        correlation_results["data_frame"] = correlation_results["data_frame"].to_dict('records')
+    
     # Save detailed results
-    save_correlation_results(correlation_results)
+    save_json_results(correlation_results, "audio_feature_correlations.json")
     
-    # Create visualizations
-    visualize_correlations(correlation_results)
+    # Create visualizations (using original DataFrames)
+    visualize_correlations(visualization_results)
     
-    # Print summary to console
-    print("\n=== Audio Feature Correlation Analysis Results ===")
-    
+    # Print summary (using original DataFrames)
+    print_correlation_summary(visualization_results)
+
+def print_correlation_summary(correlation_results):
+    """Print a summary of correlation findings to the console."""
     if "error" in correlation_results:
         print(f"Error in correlation analysis: {correlation_results['error']}")
         return
     
+    print("\n=== Audio Feature Correlation Analysis Results ===")
     correlation_matrix = correlation_results["correlation_matrix"]
     p_values_matrix = correlation_results["p_values_matrix"]
     

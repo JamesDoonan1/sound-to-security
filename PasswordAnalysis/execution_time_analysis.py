@@ -3,20 +3,15 @@ This script analyzes execution times for different stages of the audio-to-passwo
 It helps identify performance bottlenecks and benchmark your system.
 """
 
+from password_analysis_utils import (
+    get_project_paths, save_json_results, save_plot
+)
 import os
-import json
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import sys
-
-def ensure_test_results_dir():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    test_results_dir = os.path.join(current_dir, "TestResults")
-    if not os.path.exists(test_results_dir):
-        os.makedirs(test_results_dir)
-    return test_results_dir
 
 # Add parent directory to PATH
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,9 +33,7 @@ except ImportError as e:
     sys.exit(1)
 
 def time_audio_processing(audio_files_dir, num_files=10):
-    """
-    Measures the execution time for each step of audio processing on multiple files.
-    """
+    """Measures the execution time for each step of audio processing on multiple files."""
     timing_results = []
     
     # Initialize the password generator
@@ -81,7 +74,6 @@ def time_audio_processing(audio_files_dir, num_files=10):
                 result["timing"]["hash_generation"] = time.time() - hash_start
                 
                 # Time key derivation
-                # Time key derivation (salted PBKDF2)
                 salt_bytes = new_salt()
                 key_start = time.time()
                 key = derive_key(audio_hash, salt_bytes)
@@ -114,9 +106,7 @@ def time_audio_processing(audio_files_dir, num_files=10):
     return timing_results
 
 def analyze_timing_results(timing_results):
-    """
-    Analyzes timing results to extract meaningful statistics and trends.
-    """
+    """Analyzes timing results to extract meaningful statistics and trends."""
     if not timing_results:
         return {"error": "No timing data available"}
     
@@ -165,9 +155,7 @@ def analyze_timing_results(timing_results):
     return analysis
 
 def visualize_timing_analysis(analysis):
-    """
-    Creates visualizations of timing analysis results.
-    """
+    """Creates visualizations of timing analysis results."""
     if "error" in analysis:
         print(f"Error: {analysis['error']}")
         return
@@ -238,44 +226,12 @@ def visualize_timing_analysis(analysis):
             axs[1, 1].plot(x, p(x), "r--", alpha=0.8)
             axs[1, 1].text(min(x), max(y) * 0.9, f'y = {z[0]:.4f}x + {z[1]:.4f}', color='red')
     
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.92)
-    test_results_dir = ensure_test_results_dir()
-    plt.savefig(os.path.join(test_results_dir, "execution_time_analysis.png"))
-    print("Created visualization: execution_time_analysis.png")
-
-def save_timing_data(timing_results, analysis, timing_file="timing_data.json", analysis_file="timing_analysis.json"):
-    """
-    Saves the raw timing data and analysis results to JSON files.
-    """
-    test_results_dir = ensure_test_results_dir()
-    with open(os.path.join(test_results_dir, timing_file), 'w') as f:
-        json.dump(timing_results, f, indent=4)
-    print(f"Raw timing data saved to {timing_file}")
-    
-    with open(os.path.join(test_results_dir, analysis_file), 'w') as f:
-        # Convert numpy values to regular Python types for JSON serialization
-        for step, stats in analysis["steps"].items():
-            for stat, value in stats.items():
-                if isinstance(value, np.generic):
-                    analysis["steps"][step][stat] = value.item()
-        
-        if "processing_speed" in analysis and isinstance(analysis["processing_speed"], np.generic):
-            analysis["processing_speed"] = analysis["processing_speed"].item()
-        
-        json.dump(analysis, f, indent=4)
-    print(f"Analysis results saved to {analysis_file}")
+    # Save the figure
+    save_plot(fig, "execution_time_analysis.png")
 
 def main():
-    # Get the current script directory (PasswordAnalysis folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Navigate to parent directory (sound-to-security)
-    parent_dir = os.path.dirname(current_dir)
-    
-    # Navigate to root directory (outside sound-to-security)
-    root_dir = os.path.dirname(parent_dir)
-    
+    # Get paths
+    paths = get_project_paths()
     audio_files_dir = "/media/sf_VM_Shared_Folder/Audio Files"
     
     # Check if the audio directory exists
@@ -307,12 +263,17 @@ def main():
     analysis = analyze_timing_results(timing_results)
     
     # Save data
-    save_timing_data(timing_results, analysis)
+    save_json_results(timing_results, "timing_data.json")
+    save_json_results(analysis, "timing_analysis.json")
     
     # Create visualizations
     visualize_timing_analysis(analysis)
     
     # Print summary
+    print_summary_results(analysis)
+
+def print_summary_results(analysis):
+    """Print a summary of timing analysis results to the console."""
     print("\n=== Execution Time Analysis Summary ===")
     print(f"Files processed: {analysis['file_count']}")
     print(f"Total audio duration: {analysis['total_audio_seconds']:.2f} seconds")

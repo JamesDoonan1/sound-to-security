@@ -3,64 +3,16 @@ This script analyzes the strength of audio-generated passwords compared to
 dictionary-based passwords and identifies any patterns or vulnerabilities.
 """
 
+from password_analysis_utils import (
+    get_project_paths, load_audio_passwords, calculate_entropy, save_json_results, save_plot
+)
+
 import os
-import json
 import numpy as np
 import matplotlib.pyplot as plt
 import string
 import random
 from collections import Counter
-import math
-
-def ensure_test_results_dir():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    test_results_dir = os.path.join(current_dir, "TestResults")
-    if not os.path.exists(test_results_dir):
-        os.makedirs(test_results_dir)
-    return test_results_dir
-
-def calculate_entropy(password):
-    """
-    Calculate true password strength entropy based on character set size and length.
-    """
-    if not password:
-        return 0.0
-    
-    # Count which character sets are used
-    has_uppercase = any(c.isupper() for c in password)
-    has_lowercase = any(c.islower() for c in password)
-    has_digits = any(c.isdigit() for c in password)
-    has_symbols = any(not c.isalnum() for c in password)
-    
-    # Determine character set size
-    char_set_size = 0
-    if has_uppercase: char_set_size += 26
-    if has_lowercase: char_set_size += 26
-    if has_digits: char_set_size += 10
-    if has_symbols: char_set_size += 33  # Approximate for common symbols
-    
-    # Fall back to ASCII printable if no characters detected
-    if char_set_size == 0:
-        char_set_size = 95
-    
-    # Calculate entropy
-    return math.log2(char_set_size) * len(password)
-
-def load_audio_passwords(audio_data_path):
-    """
-    Load passwords from your audio_data.json file.
-    """
-    try:
-        with open(audio_data_path, 'r') as f:
-            data = json.load(f)
-        
-        # Extract passwords
-        passwords = [entry.get("password") for entry in data if entry.get("password")]
-        print(f"Loaded {len(passwords)} audio-generated passwords")
-        return passwords
-    except Exception as e:
-        print(f"Error loading audio-generated passwords: {e}")
-        return []
 
 def load_common_words(dictionary_path, min_length=4, max_length=16, max_words=10000):
     """
@@ -198,7 +150,7 @@ def analyze_password_strength(passwords):
     
     # Calculate theoretical maximum entropy
     avg_length = results["length"]["mean"]
-    results["theoretical_max_entropy"] = math.log2(95) * avg_length  # 95 printable ASCII chars
+    results["theoretical_max_entropy"] = np.log2(95) * avg_length  # 95 printable ASCII chars
     results["entropy_ratio"] = results["total_entropy"]["mean"] / results["theoretical_max_entropy"]
     
     # Calculate a complexity score based on NIST guidelines (simplified)
@@ -268,17 +220,6 @@ def identify_patterns(passwords):
             if i not in patterns["character_positions"]:
                 patterns["character_positions"][i] = Counter()
             patterns["character_positions"][i][char] += 1
-        
-        # Find common substrings across passwords (this is computationally expensive for large sets)
-        if len(passwords) < 1000:  # Only do this for reasonable-sized sets
-            for other_pw in passwords:
-                if password == other_pw:
-                    continue
-                for length in range(3, min(len(password), len(other_pw), 6)):
-                    for i in range(len(password) - length + 1):
-                        substring = password[i:i+length]
-                        if substring in other_pw:
-                            patterns["common_substrings"][substring] += 1
     
     # Normalize character positions to get percentages
     position_percentages = {}
@@ -328,6 +269,46 @@ def identify_patterns(passwords):
     
     return patterns
 
+def calculate_adjusted_entropy(passwords):
+    """
+    Calculate entropy that accounts for observed character distributions
+    at each position in the passwords.
+    """
+    if not passwords:
+        return {"total": 0, "by_position": [], "average_per_position": 0}
+    
+    # Get password length (assuming similar lengths)
+    avg_length = int(np.mean([len(p) for p in passwords if p]))
+    
+    # Count character frequencies at each position
+    position_entropy = []
+    for pos in range(avg_length):
+        char_counts = {}
+        valid_count = 0
+        
+        for pw in passwords:
+            if len(pw) > pos:
+                char = pw[pos]
+                char_counts[char] = char_counts.get(char, 0) + 1
+                valid_count += 1
+        
+        # Calculate entropy for this position
+        entropy = 0
+        for count in char_counts.values():
+            prob = count / valid_count
+            entropy -= prob * np.log2(prob)
+        
+        position_entropy.append(entropy)
+    
+    # Total entropy is sum of positional entropies
+    total_adjusted_entropy = sum(position_entropy)
+    
+    return {
+        "total": total_adjusted_entropy,
+        "by_position": position_entropy,
+        "average_per_position": np.mean(position_entropy)
+    }
+
 def compare_strength_metrics(audio_passwords, dictionary_passwords):
     """
     Compare strength metrics between audio-generated and dictionary-based passwords.
@@ -370,37 +351,105 @@ def compare_strength_metrics(audio_passwords, dictionary_passwords):
     
     return comparison
 
-def visualize_strength_comparison(comparison, audio_patterns, output_path="password_strength_comparison.png"):
-    """
-    Create visualizations comparing password strength metrics.
-    """
-    # Create a figure with multiple subplots
+def visualize_strength_comparison(comparison_results, audio_patterns, output_path="password_strength_comparison.png"):
+    """Create visualizations comparing password strength metrics."""
+    # Extract key metrics for each system
+    all_systems = comparison_results["password_types"]
+    
+    # Filter to keep only audio and basic dictionary
+    systems_to_keep = ["audio", "dictionary"]
+    indices_to_keep = [all_systems.index(system) for system in systems_to_keep if system in all_systems]
+    
+    # Create filtered systems list
+    systems = [all_systems[i] for i in indices_to_keep]
+    
+    # Calculate pattern-adjusted entropy for audio passwords
+    audio_passwords = audio_patterns.get("passwords", [])
+    
+    # If we don't have passwords, use an approximation
+    if not audio_passwords:
+        pattern_adjusted_entropy = comparison_results["metrics"]["entropy_bits"][0] * 0.85  # Approximate 15% reduction
+    else:
+        # Calculate actual adjusted entropy
+        adjusted = calculate_adjusted_entropy(audio_passwords)
+        pattern_adjusted_entropy = adjusted["total"]
+    
+    # Create a new system entry for the adjusted entropy
+    systems_with_adjusted = systems.copy()
+    systems_with_adjusted.insert(1, "audio_adjusted")  # Insert after "audio"
+    
+    # Prepare filtered data for key metrics
+    metrics = {
+        "Entropy (bits)": [comparison_results["metrics"]["entropy_bits"][i] for i in indices_to_keep],
+        "Entropy/Char (bits)": [comparison_results["metrics"]["entropy_per_char"][i] for i in indices_to_keep],
+        "Password Length": [comparison_results["metrics"]["length"][i] for i in indices_to_keep],
+    }
+    
+    # Filter other metrics too
+    filtered_metrics = {}
+    for metric_name, values_list in comparison_results["metrics"].items():
+        filtered_metrics[metric_name] = [values_list[i] for i in indices_to_keep]
+    
+    # Add adjusted entropy values
+    metrics_with_adjusted = {}
+    for metric_name, values in metrics.items():
+        if metric_name == "Entropy (bits)":
+            # Insert the adjusted entropy after the audio entry
+            adjusted_values = values.copy()
+            adjusted_values.insert(1, pattern_adjusted_entropy)
+            metrics_with_adjusted[metric_name] = adjusted_values
+        else:
+            # For other metrics, just duplicate the audio value as placeholder
+            adjusted_values = values.copy()
+            adjusted_values.insert(1, values[0])
+            metrics_with_adjusted[metric_name] = adjusted_values
+    
+    # Create a figure with subplots
     fig, axs = plt.subplots(2, 2, figsize=(15, 12))
-    fig.suptitle('Password Strength Comparison: Audio vs. Dictionary-based', fontsize=16)
+    fig.suptitle('Password Strength Comparison', fontsize=16)
     
-    # Color mapping
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
-    
-    # Plot 1: Entropy Comparison
+    # Plot entropy with special handling for the adjusted value
     ax1 = axs[0, 0]
-    x = np.arange(len(comparison["password_types"]))
+    x = np.arange(len(systems_with_adjusted))
     width = 0.35
     
-    ax1.bar(x - width/2, comparison["metrics"]["entropy_bits"], width, label='Total Entropy (bits)')
-    ax1.bar(x + width/2, comparison["metrics"]["entropy_per_char"], width, label='Entropy per Char (bits)')
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    special_colors = ['#1f77b4', '#d62728', '#2ca02c']
     
-    # Set appropriate scale for entropy
-    max_entropy = max(comparison["metrics"]["entropy_bits"])
+    # Plot total entropy bars
+    bars1 = ax1.bar(x - width/2, metrics_with_adjusted["Entropy (bits)"], width, color=special_colors, label='Total Entropy')
+    
+    # Add hatching to the adjusted bar
+    bars1[1].set_hatch('////')
+    
+    # Plot entropy per character bars with orange color
+    bars2 = ax1.bar(x + width/2, metrics_with_adjusted["Entropy/Char (bits)"], width, color='orange', label='Entropy/Char')
+    
+    # Set appropriate scale
+    max_entropy = max(metrics_with_adjusted["Entropy (bits)"])
     ax1.set_ylim(0, max(80, max_entropy * 1.2))
     
     ax1.set_title('Password Entropy')
     ax1.set_xticks(x)
-    ax1.set_xticklabels([t.capitalize() for t in comparison["password_types"]])
+    labels = [s.capitalize() if s != "audio_adjusted" else "Audio (Adjusted)" for s in systems_with_adjusted]
+    ax1.set_xticklabels(labels, rotation=45, ha='right')
     ax1.legend()
     
-    # Plot 2: Complexity Score
+    # Add values on top of bars
+    for i, bar in enumerate(bars1):
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height + 2,
+                f'{height:.2f}', ha='center', va='bottom', fontsize=9, color='black')
+    
+    for i, bar in enumerate(bars2):
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height + 2,
+                f'{height:.2f}', ha='center', va='bottom', fontsize=9, color='black')
+    
+    # Plot 2: Complexity Score (using filtered systems)
     ax2 = axs[0, 1]
-    bars = ax2.bar(comparison["password_types"], comparison["metrics"]["complexity_score"], color=colors)
+    complexity_values = [filtered_metrics["complexity_score"][i] for i in range(len(systems))]
+    bars = ax2.bar(systems, complexity_values, color=colors[:len(systems)])
     ax2.set_title('Password Complexity Score (NIST-based)')
     ax2.set_ylim(0, 15)  # Score ranges from 0-15
     
@@ -410,17 +459,17 @@ def visualize_strength_comparison(comparison, audio_patterns, output_path="passw
         ax2.text(bar.get_x() + bar.get_width()/2., height + 0.1, f'{height:.1f}', 
                 ha='center', va='bottom')
     
-    # Plot 3: Character Class Distribution
+    # Plot 3: Character Class Distribution (using filtered systems)
     ax3 = axs[1, 0]
     char_classes = ['Uppercase', 'Lowercase', 'Digits', 'Symbols']
     char_data = np.array([
-        comparison["metrics"]["uppercase_pct"],
-        comparison["metrics"]["lowercase_pct"],
-        comparison["metrics"]["digits_pct"],
-        comparison["metrics"]["symbols_pct"]
+        filtered_metrics["uppercase_pct"],
+        filtered_metrics["lowercase_pct"],
+        filtered_metrics["digits_pct"],
+        filtered_metrics["symbols_pct"]
     ]).T  # Transpose to get the right shape
     
-    x = np.arange(len(comparison["password_types"]))
+    x = np.arange(len(systems))
     width = 0.2
     
     # Plot each character class as a group of bars
@@ -429,11 +478,11 @@ def visualize_strength_comparison(comparison, audio_patterns, output_path="passw
     
     ax3.set_title('Character Class Distribution')
     ax3.set_xticks(x)
-    ax3.set_xticklabels([t.capitalize() for t in comparison["password_types"]])
+    ax3.set_xticklabels([t.capitalize() for t in systems], rotation=45, ha='right')
     ax3.set_ylabel('Percentage (%)')
-    ax3.legend()
+    ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=4)
     
-    # Plot 4: Vulnerability Analysis (for audio passwords)
+    # Plot 4: Vulnerability Analysis
     ax4 = axs[1, 1]
     ax4.axis('off')  # Turn off axis
     
@@ -458,74 +507,49 @@ def visualize_strength_comparison(comparison, audio_patterns, output_path="passw
     else:
         vulnerability_text += "- No significant vulnerabilities identified\n"
     
+    # Add information about the pattern-adjusted entropy
+    theoretical = comparison_results["metrics"]["entropy_bits"][0]
+    vulnerability_text += f"\nEntropy Analysis:\n"
+    vulnerability_text += f"- Theoretical: {theoretical:.2f} bits\n"
+    vulnerability_text += f"- Pattern-Adjusted: {pattern_adjusted_entropy:.2f} bits\n"
+    vulnerability_text += f"- Reduction: {theoretical - pattern_adjusted_entropy:.2f} bits ({(theoretical - pattern_adjusted_entropy)/theoretical*100:.1f}%)"
+    
     ax4.text(0.05, 0.95, vulnerability_text, fontsize=10, verticalalignment='top', 
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.9)
-    test_results_dir = ensure_test_results_dir()
-    plt.savefig(os.path.join(test_results_dir, output_path))
-    print(f"Created visualization: {output_path}")
-        
-def save_analysis_results(comparison, audio_patterns, dict_patterns, output_file="password_strength_analysis.json"):
-    """
-    Save analysis results to a JSON file.
-    """
-    # Convert Counter objects to regular dictionaries for JSON serialization
-    for pattern_type, counter in audio_patterns.items():
-        if isinstance(counter, Counter):
-            audio_patterns[pattern_type] = dict(counter.most_common(10))
+    # Fix text overlap
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust to leave room for suptitle
     
-    for pw_type, patterns in dict_patterns.items():
-        for pattern_type, counter in patterns.items():
-            if isinstance(counter, Counter):
-                dict_patterns[pw_type][pattern_type] = dict(counter.most_common(10))
-    
-    # Prepare results
-    results = {
-        "strength_comparison": comparison,
-        "audio_password_patterns": audio_patterns,
-        "dictionary_password_patterns": dict_patterns
-    }
-    
-    test_results_dir = ensure_test_results_dir()
-    with open(os.path.join(test_results_dir, output_file), 'w') as f:
-        json.dump(results, f, indent=4)
-    
-    print(f"Analysis results saved to {output_file}")
+    # Save the figure
+    save_plot(fig, output_path)
 
 def main():
-    # Get the current script directory (PasswordAnalysis folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Navigate to parent directory (sound-to-security)
-    parent_dir = os.path.dirname(current_dir)
-    
-    # Navigate to root directory (outside sound-to-security)
-    root_dir = os.path.dirname(parent_dir)
-    
-    # Path to your audio data
-    audio_data_path = os.path.join(root_dir, "audio_data.json")
+    # Get paths
+    paths = get_project_paths()
+    audio_data_path = paths["audio_data_path"]
     
     # Path to dictionary file (try multiple locations)
+    current_dir = paths["current_dir"]
+    parent_dir = paths["parent_dir"]
+    root_dir = paths["root_dir"]
+    
     dictionary_path = os.path.join(current_dir, "common_words.txt")
     
     # Check alternative locations if the file isn't found
     if not os.path.exists(dictionary_path):
-        # Try rockyou.txt in the root directory
-        root_rockyou = os.path.join(root_dir, "rockyou.txt")
-        if os.path.exists(root_rockyou):
-            dictionary_path = root_rockyou
-            print(f"Found rockyou.txt in root directory: {dictionary_path}")
+        alternative_paths = [
+            os.path.join(root_dir, "rockyou.txt"),
+            os.path.join(parent_dir, "rockyou.txt")
+        ]
+        
+        for alt_path in alternative_paths:
+            if os.path.exists(alt_path):
+                dictionary_path = alt_path
+                print(f"Found dictionary file: {dictionary_path}")
+                break
         else:
-            # Try other common locations
-            parent_rockyou = os.path.join(parent_dir, "rockyou.txt")
-            if os.path.exists(parent_rockyou):
-                dictionary_path = parent_rockyou
-                print(f"Found rockyou.txt in parent directory: {dictionary_path}")
-            else:
-                dictionary_path = None
-                print("No dictionary file found. Will generate sample dictionary passwords.")
+            dictionary_path = None
+            print("No dictionary file found. Will generate sample dictionary passwords.")
     
     print("Starting password strength and pattern analysis...")
     
@@ -566,6 +590,7 @@ def main():
     print("Analyzing password patterns...")
     audio_patterns = identify_patterns(audio_passwords)
     audio_patterns["count"] = len(audio_passwords)  # Add count for percentage calculations
+    audio_patterns["passwords"] = audio_passwords  # Store the actual passwords for entropy calculation
     
     # Identify patterns in dictionary passwords (sample only for performance)
     dict_patterns = {}
@@ -584,16 +609,35 @@ def main():
     visualize_strength_comparison(strength_comparison, audio_patterns)
     
     # Save results
-    save_analysis_results(strength_comparison, audio_patterns, dict_patterns)
+    save_json_results({
+        "strength_comparison": strength_comparison, 
+        "audio_patterns": audio_patterns, 
+        "dict_patterns": dict_patterns
+    }, "password_strength_analysis.json")
     
-    # Print summary to console
+    # Print summary
+    print_summary_results(strength_comparison, audio_patterns)
+
+def print_summary_results(strength_comparison, audio_patterns):
+    """Print a summary of strength analysis results to the console."""
     print("\n=== Password Strength Analysis Summary ===")
-    print(f"\nAudio-generated passwords ({len(audio_passwords)} analyzed):")
+    print(f"\nAudio-generated passwords ({strength_comparison['password_types'][0]} analyzed):")
     print(f"  Average Entropy: {strength_comparison['metrics']['entropy_bits'][0]:.2f} bits")
     print(f"  Theoretical Maximum Entropy: {strength_comparison['metrics']['theoretical_max_entropy'][0]:.2f} bits")
     print(f"  Entropy Utilization Ratio: {strength_comparison['metrics']['entropy_ratio'][0]:.2f}")
     print(f"  Entropy per Character: {strength_comparison['metrics']['entropy_per_char'][0]:.2f} bits/char")
     print(f"  Complexity Score: {strength_comparison['metrics']['complexity_score'][0]:.2f}/15")
+    
+    # Calculate and print pattern-adjusted entropy
+    if audio_patterns.get("passwords"):
+        adjusted = calculate_adjusted_entropy(audio_patterns["passwords"])
+        pattern_adjusted_entropy = adjusted["total"]
+        theoretical = strength_comparison['metrics']['entropy_bits'][0]
+        reduction = theoretical - pattern_adjusted_entropy
+        reduction_pct = (reduction / theoretical) * 100
+        
+        print(f"  Pattern-Adjusted Entropy: {pattern_adjusted_entropy:.2f} bits")
+        print(f"  Entropy Reduction: {reduction:.2f} bits ({reduction_pct:.1f}%)")
     
     # Print pattern vulnerabilities
     print("\nPotential pattern vulnerabilities:")
@@ -610,11 +654,10 @@ def main():
     print(f"\nCompared to best dictionary-based passwords ({best_dict_type}):")
     entropy_diff = strength_comparison["metrics"]["entropy_bits"][0] - strength_comparison["metrics"]["entropy_bits"][best_dict_index]
     complexity_diff = strength_comparison["metrics"]["complexity_score"][0] - strength_comparison["metrics"]["complexity_score"][best_dict_index]
-    
+   
     print(f"  Entropy difference: {entropy_diff:.2f} bits ({'+' if entropy_diff >= 0 else ''}{entropy_diff/strength_comparison['metrics']['entropy_bits'][best_dict_index]*100:.1f}%)")
     print(f"  Complexity difference: {complexity_diff:.2f} points ({'+' if complexity_diff >= 0 else ''}{complexity_diff/strength_comparison['metrics']['complexity_score'][best_dict_index]*100:.1f}%)")
-    
-    print("\nAnalysis complete. Results and visualizations have been saved.")
 
 if __name__ == "__main__":
-    main()
+   import os  # Import here for alternative path checking
+   main()

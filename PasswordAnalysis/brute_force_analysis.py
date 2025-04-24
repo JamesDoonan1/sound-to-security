@@ -3,8 +3,11 @@ This script analyzes the resistance of your audio-generated passwords to brute f
 by calculating theoretical attack times and simulating attack attempts.
 """
 
-import os
-import json
+from password_analysis_utils import (
+    get_project_paths, load_audio_passwords, load_security_test_results,
+    calculate_entropy, save_json_results,
+    save_plot, format_time_estimate
+)
 import numpy as np
 import matplotlib.pyplot as plt
 import math
@@ -13,92 +16,6 @@ import string
 import time
 from collections import Counter
 from tqdm import tqdm
-
-def ensure_test_results_dir():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    test_results_dir = os.path.join(current_dir, "TestResults")
-    if not os.path.exists(test_results_dir):
-        os.makedirs(test_results_dir)
-    return test_results_dir
-
-def calculate_entropy(password):
-    """
-    Calculate true password strength entropy based on character set size and length.
-    """
-    if not password:
-        return 0.0
-    
-    # Count which character sets are used
-    has_uppercase = any(c.isupper() for c in password)
-    has_lowercase = any(c.islower() for c in password)
-    has_digits = any(c.isdigit() for c in password)
-    has_symbols = any(not c.isalnum() for c in password)
-    
-    # Determine character set size
-    char_set_size = 0
-    if has_uppercase: char_set_size += 26
-    if has_lowercase: char_set_size += 26
-    if has_digits: char_set_size += 10
-    if has_symbols: char_set_size += 33  # Approximate for common symbols
-    
-    # Fall back to ASCII printable if no characters detected
-    if char_set_size == 0:
-        char_set_size = 95
-    
-    # Calculate entropy
-    return math.log2(char_set_size) * len(password)
-
-def load_audio_passwords(audio_data_path):
-    """
-    Load passwords from your audio_data.json file.
-    """
-    try:
-        with open(audio_data_path, 'r') as f:
-            data = json.load(f)
-        
-        # Extract passwords
-        passwords = [entry.get("password") for entry in data if entry.get("password")]
-        print(f"Loaded {len(passwords)} audio-generated passwords")
-        return passwords
-    except Exception as e:
-        print(f"Error loading audio-generated passwords: {e}")
-        return []
-
-def load_security_test_results(security_test_path):
-    """
-    Load security test results containing candidate passwords and edit distances.
-    """
-    try:
-        with open(security_test_path, 'r') as f:
-            data = json.load(f)
-        
-        print(f"Loaded security test results with {len(data)} test cases")
-        
-        # Extract relevant data
-        results = {
-            "base_passwords": [],
-            "candidate_passwords": [],
-            "edit_distances": []
-        }
-        
-        for test in data:
-            if "base_password" in test:
-                results["base_passwords"].append(test["base_password"])
-            
-            if "candidates" in test:
-                results["candidate_passwords"].extend([c for c in test["candidates"] if c])
-            
-            if "edit_distances" in test:
-                results["edit_distances"].extend(test["edit_distances"])
-        
-        print(f"  Found {len(results['base_passwords'])} base passwords")
-        print(f"  Found {len(results['candidate_passwords'])} candidate passwords")
-        print(f"  Found {len(results['edit_distances'])} edit distance measurements")
-        
-        return results
-    except Exception as e:
-        print(f"Error loading security test results: {e}")
-        return {"base_passwords": [], "candidate_passwords": [], "edit_distances": []}
 
 def analyze_password_character_space(passwords):
     """
@@ -132,7 +49,6 @@ def analyze_password_character_space(passwords):
     theoretical_combinations_full_space = 95 ** avg_length
     
     # Calculate theoretical combinations based on character class division
-    # (this is an approximation - actual implementation might use different logic)
     class_based_space = (uppercase + lowercase + digits + symbols) ** avg_length
     
     # Calculate theoretical maximum entropy based on character space and average length
@@ -201,29 +117,6 @@ def estimate_brute_force_times(character_space_analysis):
             results["using_actual_entropy"][attack_type] = seconds
     
     return results
-
-def format_time_estimate(seconds):
-    """
-    Format a time estimate in seconds to a human-readable string.
-    """
-    if seconds < 60:
-        return f"{seconds:.2f} seconds"
-    elif seconds < 3600:
-        return f"{seconds/60:.2f} minutes"
-    elif seconds < 86400:
-        return f"{seconds/3600:.2f} hours"
-    elif seconds < 31536000:
-        return f"{seconds/86400:.2f} days"
-    elif seconds < 31536000 * 100:
-        return f"{seconds/31536000:.2f} years"
-    elif seconds < 31536000 * 1e6:
-        return f"{seconds/31536000/1000:.2f} thousand years"
-    elif seconds < 31536000 * 1e9:
-        return f"{seconds/31536000/1e6:.2f} million years"
-    elif seconds < 31536000 * 1e12:
-        return f"{seconds/31536000/1e9:.2f} billion years"
-    else:
-        return f"{seconds/31536000/1e12:.2f} trillion years"
 
 def simulate_brute_force_attacks(passwords, num_attempts=1000, strategy="random"):
     """
@@ -452,6 +345,7 @@ def visualize_brute_force_analysis(character_space_analysis, time_estimates, sim
     ax2.set_xlabel('Log₁₀(Years)')
     
     # Add actual time estimates as text
+    # Add actual time estimates as text
     for i, bar in enumerate(bars):
         seconds = time_estimates["using_observed_character_space"][attack_types[i]]
         time_str = format_time_estimate(seconds)
@@ -501,55 +395,14 @@ def visualize_brute_force_analysis(character_space_analysis, time_estimates, sim
         ax4.text(0.5, 0.5, 'No edit distance data available', 
                 horizontalalignment='center', verticalalignment='center')
     
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.9)
-    test_results_dir = ensure_test_results_dir()
-    plt.savefig(os.path.join(test_results_dir, 'brute_force_analysis.png'))
-    print("Created visualization: brute_force_analysis.png")
-
-def save_analysis_results(character_space_analysis, time_estimates, simulation_results, 
-                          edit_distance_analysis, expected_attempts, output_file="brute_force_analysis_results.json"):
-    """
-    Save all analysis results to a JSON file.
-    """
-    results = {
-        "character_space_analysis": character_space_analysis,
-        "time_estimates": time_estimates,
-        "simulation_results": simulation_results,
-        "edit_distance_analysis": edit_distance_analysis, 
-        "expected_attempts": expected_attempts
-    }
-    
-    # Clean up the results for JSON serialization
-    # Convert sets to lists, etc.
-    if "unique_characters" in character_space_analysis:
-        character_space_analysis["unique_characters"] = list(character_space_analysis["unique_characters"])
-    
-    # Convert numpy values to Python native types
-    if "error" not in edit_distance_analysis:
-        for key in ["min", "max", "mean", "median", "std"]:
-            if key in edit_distance_analysis and isinstance(edit_distance_analysis[key], np.generic):
-                edit_distance_analysis[key] = edit_distance_analysis[key].item()
-    
-    test_results_dir = ensure_test_results_dir()
-    with open(os.path.join(test_results_dir, output_file), 'w') as f:
-        json.dump(results, f, indent=4)
-    
-    print(f"Analysis results saved to {output_file}")
+    # Save the figure
+    save_plot(fig, 'brute_force_analysis.png')
 
 def main():
-    # Get the current script directory (PasswordAnalysis folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Navigate to parent directory (sound-to-security)
-    parent_dir = os.path.dirname(current_dir)
-    
-    # Navigate to root directory (outside sound-to-security)
-    root_dir = os.path.dirname(parent_dir)
-    
-    # Path to your audio data and security test results
-    audio_data_path = os.path.join(root_dir, "audio_data.json")
-    security_test_path = os.path.join(parent_dir, "PasswordGenerator", "security_test_results.json")
+    # Get paths
+    paths = get_project_paths()
+    audio_data_path = paths["audio_data_path"]
+    security_test_path = paths["security_test_path"]
     
     print("Starting brute force resistance analysis...")
     
@@ -589,13 +442,14 @@ def main():
     )
     
     # Save all results
-    save_analysis_results(
-        character_space_analysis, 
-        time_estimates, 
-        simulation_results, 
-        edit_distance_analysis, 
-        expected_attempts
-    )
+    results = {
+        "character_space_analysis": character_space_analysis, 
+        "time_estimates": time_estimates, 
+        "simulation_results": simulation_results, 
+        "edit_distance_analysis": edit_distance_analysis, 
+        "expected_attempts": expected_attempts
+    }
+    save_json_results(results, "brute_force_analysis_results.json")
     
     # Create visualizations
     print("Creating visualizations...")
@@ -607,7 +461,13 @@ def main():
         expected_attempts
     )
     
-    # Print summary to console
+    # Print summary
+    print_summary_results(character_space_analysis, time_estimates, simulation_results, 
+                         edit_distance_analysis, expected_attempts)
+
+def print_summary_results(character_space_analysis, time_estimates, simulation_results, 
+                         edit_distance_analysis, expected_attempts):
+    """Print a summary of brute force analysis results to the console."""
     print("\n=== Brute Force Resistance Analysis Summary ===")
     
     print(f"\nCharacter Space:")
@@ -624,7 +484,7 @@ def main():
         print(f"  {attack_type}: {time_str}")
     
     if "error" not in simulation_results:
-        print(f"\nSimulation Results ({num_attempts} attempts):")
+        print(f"\nSimulation Results ({simulation_results['strategies']['random']['attempts']} attempts):")
         for strategy, results in simulation_results["strategies"].items():
             print(f"  {strategy} strategy: {results['matches']} matches ({results['success_rate']:.6f}%)")
     
@@ -638,8 +498,6 @@ def main():
     if "error" not in expected_attempts:
         print(f"\nExpected Brute Force Attempts Needed:")
         print(f"  {expected_attempts['expected_attempts_needed']:.2e} attempts")
-    
-    print("\nAnalysis complete. Results and visualizations have been saved.")
 
 if __name__ == "__main__":
     main()

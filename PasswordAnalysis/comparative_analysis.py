@@ -3,69 +3,26 @@ This script compares your audio-based password generation system with traditiona
 password generation methods and other authentication approaches.
 """
 
-import os
-import json
+from password_analysis_utils import (
+    get_project_paths, load_audio_passwords, calculate_entropy,
+    ensure_test_results_dir, save_json_results, save_plot, format_time_estimate
+)
 import numpy as np
 import matplotlib.pyplot as plt
 import string
 import secrets
 import random
-import math
-from collections import Counter
 import pandas as pd
 import seaborn as sns
-from matplotlib.patches import Circle, RegularPolygon
-from matplotlib.path import Path
-from matplotlib.projections import register_projection
-from matplotlib.projections.polar import PolarAxes
-from matplotlib.spines import Spine
-from matplotlib.transforms import Affine2D
-
-def ensure_test_results_dir():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    test_results_dir = os.path.join(current_dir, "TestResults")
-    if not os.path.exists(test_results_dir):
-        os.makedirs(test_results_dir)
-    return test_results_dir
-
-def calculate_entropy(password):
-    """
-    Calculate true password strength entropy based on character set size and length.
-    """
-    if not password:
-        return 0.0
-    
-    # Count which character sets are used
-    has_uppercase = any(c.isupper() for c in password)
-    has_lowercase = any(c.islower() for c in password)
-    has_digits = any(c.isdigit() for c in password)
-    has_symbols = any(not c.isalnum() for c in password)
-    
-    # Determine character set size
-    char_set_size = 0
-    if has_uppercase: char_set_size += 26
-    if has_lowercase: char_set_size += 26
-    if has_digits: char_set_size += 10
-    if has_symbols: char_set_size += 33  # Approximate for common symbols
-    
-    # Fall back to ASCII printable if no characters detected
-    if char_set_size == 0:
-        char_set_size = 95
-    
-    # Calculate entropy
-    return math.log2(char_set_size) * len(password)
+import os
 
 def generate_traditional_password(length=12):
-    """
-    Generate a traditional random password using Python's secrets module.
-    """
+    """Generate a traditional random password using Python's secrets module."""
     chars = string.ascii_letters + string.digits + string.punctuation
     return ''.join(secrets.choice(chars) for _ in range(length))
 
 def generate_readable_password(length=12):
-    """
-    Generate a more readable password with patterns (like those from password managers).
-    """
+    """Generate a more readable password with patterns (like those from password managers)."""
     words = ["apple", "banana", "orange", "grape", "melon", "cherry", "peach", "lemon", 
              "plum", "berries", "kiwi", "mango", "lime", "coconut", "fig", "date"]
     
@@ -89,9 +46,7 @@ def generate_readable_password(length=12):
     return word[:length]
 
 def generate_diceware_password(num_words=4):
-    """
-    Generate a diceware-style password (word-based).
-    """
+    """Generate a diceware-style password (word-based)."""
     words = ["apple", "banana", "orange", "grape", "melon", "cherry", "peach", "lemon", 
              "plum", "berries", "kiwi", "mango", "lime", "coconut", "fig", "date",
              "cat", "dog", "bird", "fish", "lion", "tiger", "bear", "wolf", "fox",
@@ -106,26 +61,8 @@ def generate_diceware_password(num_words=4):
     
     return password
 
-def load_audio_passwords(audio_data_path):
-    """
-    Load passwords from your audio_data.json file.
-    """
-    try:
-        with open(audio_data_path, 'r') as f:
-            data = json.load(f)
-        
-        # Extract passwords
-        passwords = [entry.get("password") for entry in data if entry.get("password")]
-        print(f"Loaded {len(passwords)} audio-generated passwords")
-        return passwords
-    except Exception as e:
-        print(f"Error loading audio-generated passwords: {e}")
-        return []
-
 def analyze_password_security(passwords):
-    """
-    Analyze various security aspects of a set of passwords.
-    """
+    """Analyze various security aspects of a set of passwords."""
     if not passwords:
         return {"error": "No passwords provided"}
     
@@ -154,22 +91,10 @@ def analyze_password_security(passwords):
         "patterns": {}
     }
     
-    # Analyze starting characters
-    starting_chars = [p[0] for p in valid_passwords]
-    start_char_count = Counter(starting_chars)
-    results["patterns"]["start_chars"] = {char: count / len(valid_passwords) * 100 
-                                         for char, count in start_char_count.most_common(5)}
-    
-    # Analyze starting patterns (first 2 chars)
-    starting_patterns = [p[:2] for p in valid_passwords if len(p) >= 2]
-    start_pattern_count = Counter(starting_patterns)
-    results["patterns"]["start_patterns"] = {pattern: count / len(valid_passwords) * 100 
-                                            for pattern, count in start_pattern_count.most_common(5)}
-    
     # Add total entropy metrics and theoretical maximum
     avg_length = results["length"]["mean"]
     results["entropy"]["total"] = results["entropy"]["mean"]  # Already calculated, just rename for clarity
-    results["entropy"]["theoretical_max"] = math.log2(95) * avg_length
+    results["entropy"]["theoretical_max"] = np.log2(95) * avg_length
     results["entropy"]["ratio_to_max"] = results["entropy"]["total"] / results["entropy"]["theoretical_max"]
     
     # Calculate theoretical password space
@@ -192,9 +117,7 @@ def analyze_password_security(passwords):
     return results
 
 def compare_password_systems(audio_passwords, num_comparison_passwords=500):
-    """
-    Compare audio-based passwords with other password generation approaches.
-    """
+    """Compare audio-based passwords with other password generation approaches."""
     print("Generating comparison passwords...")
     
     # Generate comparison password sets
@@ -220,84 +143,8 @@ def compare_password_systems(audio_passwords, num_comparison_passwords=500):
     
     return results
 
-# Function to create a radar chart
-def radar_factory(num_vars, frame='circle'):
-    """
-    Create a radar chart with `num_vars` axes.
-    """
-    # Calculate evenly-spaced axis angles
-    theta = np.linspace(0, 2*np.pi, num_vars, endpoint=False)
-    
-    class RadarAxes(PolarAxes):
-        name = 'radar'
-        
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.set_theta_zero_location('N')
-            
-        def fill(self, *args, **kwargs):
-            """Override fill so that line is closed by default"""
-            closed = kwargs.pop('closed', True)
-            return super().fill(closed=closed, *args, **kwargs)
-            
-        def plot(self, *args, **kwargs):
-            """Override plot so that line is closed by default"""
-            lines = super().plot(*args, **kwargs)
-            for line in lines:
-                self._close_line(line)
-                
-        def _close_line(self, line):
-            x, y = line.get_data()
-            # FIXME: markers at x[0], y[0] get doubled-up
-            if x[0] != x[-1]:
-                x = np.concatenate((x, [x[0]]))
-                y = np.concatenate((y, [y[0]]))
-                line.set_data(x, y)
-                
-        def set_varlabels(self, labels):
-            self.set_thetagrids(np.degrees(theta), labels)
-            
-        def _gen_axes_patch(self):
-            if frame == 'circle':
-                return Circle((0.5, 0.5), 0.5)
-            elif frame == 'polygon':
-                return RegularPolygon((0.5, 0.5), num_vars,
-                                      radius=0.5, edgecolor="k")
-            else:
-                raise ValueError("unknown value for 'frame': %s" % frame)
-                
-        def draw(self, renderer):
-            """ Draw. If frame is polygon, make gridlines polygon-shaped """
-            if frame == 'polygon':
-                gridlines = self.yaxis.get_gridlines()
-                for gl in gridlines:
-                    gl.get_path()._interpolation_steps = num_vars
-            super().draw(renderer)
-                
-        def _gen_axes_spines(self):
-            if frame == 'circle':
-                return super()._gen_axes_spines()
-            elif frame == 'polygon':
-                # spine_type must be 'left'/'right'/'top'/'bottom'/'circle'.
-                spine = Spine(axes=self,
-                              spine_type='circle',
-                              path=Path.unit_regular_polygon(num_vars))
-                # unit_regular_polygon produces a polygon of radius 1
-                # centered at (0, 0) but we want a polygon
-                # of radius 0.5 centered at (0.5, 0.5)
-                spine.set_transform(Affine2D().scale(.5).translate(.5, .5)
-                                    + self.transAxes)
-                return {'polar': spine}
-            else:
-                raise ValueError("unknown value for 'frame': %s" % frame)
-    
-    register_projection(RadarAxes)
-    return theta
-
 def visualize_comparison(comparison_results, output_path="password_system_comparison.png"):
-    """
-    Create visualizations comparing different password systems.
-    """
+    """Create visualizations comparing different password systems."""
     # Extract key metrics for each system
     systems = list(comparison_results.keys())
     
@@ -364,56 +211,11 @@ def visualize_comparison(comparison_results, output_path="password_system_compar
     ax_chars.set_ylabel('Percentage (%)')
     ax_chars.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=4)
     
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.9)
-    test_results_dir = ensure_test_results_dir()
-    plt.savefig(os.path.join(test_results_dir, output_path))
-    print(f"Created comparison visualization: {output_path}")
-
-def save_comparison_results(comparison_results, output_file="password_comparison_results.json"):
-    """
-    Save comparison results to a JSON file.
-    """
-    # Create a more serializable version of the results
-    serializable_results = {}
-    
-    for system, results in comparison_results.items():
-        serializable_results[system] = {
-            "count": results["count"],
-            "average_length": float(results["length"]["mean"]),
-            "min_length": results["length"]["min"],
-            "max_length": results["length"]["max"],
-            "average_entropy_bits": float(results["entropy"]["mean"]),
-            "entropy_per_character": float(results["entropy"]["per_char"]),
-            "theoretical_max_entropy": float(results["entropy"]["theoretical_max"]),
-            "entropy_utilization_ratio": float(results["entropy"]["ratio_to_max"]),
-            "character_classes": {
-                "uppercase_percent": float(results["character_classes"]["uppercase_pct"]),
-                "lowercase_percent": float(results["character_classes"]["lowercase_pct"]),
-                "digits_percent": float(results["character_classes"]["digits_pct"]),
-                "symbols_percent": float(results["character_classes"]["symbols_pct"])
-            },
-            "uniqueness_percent": float(results["uniqueness"]),
-            "top_start_patterns": results["patterns"]["start_patterns"],
-            "theoretical_combinations": float(results["theoretical_combinations"]),
-            "estimated_crack_times": {
-                "slow_attack_seconds": float(results["crack_time_seconds"]["slow"]),
-                "moderate_attack_seconds": float(results["crack_time_seconds"]["moderate"]),
-                "fast_attack_seconds": float(results["crack_time_seconds"]["fast"]),
-                "extreme_attack_seconds": float(results["crack_time_seconds"]["extreme"])
-            }
-        }
-    
-    test_results_dir = ensure_test_results_dir()
-    with open(os.path.join(test_results_dir, output_file), 'w') as f:
-        json.dump(serializable_results, f, indent=4)
-    
-    print(f"Comparison results saved to {output_file}")
+    # Save the figure
+    save_plot(fig, output_path)
 
 def compare_with_biometric_systems():
-    """
-    Provides a qualitative comparison with other biometric authentication methods.
-    """
+    """Provides a qualitative comparison with other biometric authentication methods."""
     # Data from various security research sources (approximate values)
     biometric_comparison = {
         "methods": [
@@ -426,7 +228,7 @@ def compare_with_biometric_systems():
         ],
         "metrics": {
             "false_acceptance_rate": [
-                "Variable (depends on AI accuracy)",  # My system
+                "Variable (depends on AI accuracy)",  # Your system
                 "0.1% - 1%",                          # Fingerprint
                 "0.1% - 5%",                          # Face Recognition
                 "2% - 5%",                            # Voice Recognition
@@ -434,7 +236,7 @@ def compare_with_biometric_systems():
                 "N/A"                                 # Traditional Password
             ],
             "false_rejection_rate": [
-                "Variable (depends on audio similarity)",  # My system
+                "Variable (depends on audio similarity)",  # Your system
                 "1% - 5%",                                # Fingerprint
                 "2% - 15%",                               # Face Recognition
                 "5% - 10%",                               # Voice Recognition
@@ -442,7 +244,7 @@ def compare_with_biometric_systems():
                 "N/A (except forgotten passwords)"        # Traditional Password
             ],
             "user_convenience": [
-                "Medium (requires audio)",       # My system
+                "Medium (requires audio)",       # Your system
                 "High",                          # Fingerprint
                 "High",                          # Face Recognition
                 "Medium",                        # Voice Recognition
@@ -450,7 +252,7 @@ def compare_with_biometric_systems():
                 "Low (need to remember)"         # Traditional Password
             ],
             "security_level": [
-                "Medium-High",  # My system
+                "Medium-High",  # Your system
                 "Medium",       # Fingerprint
                 "Medium",       # Face Recognition
                 "Medium-Low",   # Voice Recognition
@@ -458,7 +260,7 @@ def compare_with_biometric_systems():
                 "Variable"      # Traditional Password
             ],
             "spoofing_resistance": [
-                "High (requires specific audio)",  # My system
+                "High (requires specific audio)",  # Your system
                 "Medium-High",                     # Fingerprint
                 "Low-Medium",                      # Face Recognition
                 "Low",                             # Voice Recognition
@@ -466,7 +268,7 @@ def compare_with_biometric_systems():
                 "Low-Medium"                       # Traditional Password
             ],
             "privacy_concerns": [
-                "Low (audio not stored)",     # My system
+                "Low (audio not stored)",     # Your system
                 "High (stored biometric)",    # Fingerprint
                 "High (stored biometric)",    # Face Recognition
                 "High (stored biometric)",    # Voice Recognition
@@ -482,13 +284,11 @@ def compare_with_biometric_systems():
     # Save as CSV
     test_results_dir = ensure_test_results_dir()
     df.to_csv(os.path.join(test_results_dir, "biometric_comparison.csv"))
-    print("Biometric comparison saved to biometric_comparison.csv")
     
     # Create a visualization
     plt.figure(figsize=(12, 8))
     
-    # Convert to a heat map style visualization (categorical)
-    # Map categorical values to numeric scores for visualization
+    # Convert categorical values to numeric scores for visualization
     security_map = {
         "Very High": 5, "High": 4, "Medium-High": 3.5, "Medium": 3, 
         "Medium-Low": 2.5, "Low": 2, "Very Low": 1, "Variable": 3, "N/A": 0
@@ -504,26 +304,20 @@ def compare_with_biometric_systems():
     numeric_df = numeric_df[numeric_cols]
     
     # Create a heatmap
-    sns.heatmap(numeric_df, annot=df[numeric_cols], fmt="", cmap="YlGnBu", linewidths=0.5, cbar_kws={"label": "Score (1-5)"})
+    fig = plt.figure(figsize=(12, 8))
+    sns.heatmap(numeric_df, annot=df[numeric_cols], fmt="", cmap="YlGnBu", 
+               linewidths=0.5, cbar_kws={"label": "Score (1-5)"})
     plt.title("Comparison with Biometric Authentication Methods")
-    plt.tight_layout()
-    plt.savefig(os.path.join(test_results_dir, "biometric_comparison.png"))
-    print("Created biometric comparison visualization: biometric_comparison.png")
+    
+    # Save the figure
+    save_plot(fig, "biometric_comparison.png")
     
     return biometric_comparison
 
 def main():
-    # Get the current script directory (PasswordAnalysis folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    
-    # Navigate to parent directory (sound-to-security)
-    parent_dir = os.path.dirname(current_dir)
-    
-    # Navigate to root directory (outside sound-to-security)
-    root_dir = os.path.dirname(parent_dir)
-    
-    # Path to your audio data
-    audio_data_path = os.path.join(root_dir, "audio_data.json")
+    # Get paths
+    paths = get_project_paths()
+    audio_data_path = paths["audio_data_path"]
     
     print("Starting comparative analysis of password systems...")
     
@@ -544,7 +338,7 @@ def main():
     comparison_results = compare_password_systems(audio_passwords, num_comparison)
     
     # Save detailed results
-    save_comparison_results(comparison_results)
+    save_json_results(comparison_results, "password_comparison_results.json")
     
     # Create visualizations
     visualize_comparison(comparison_results)
@@ -552,7 +346,11 @@ def main():
     # Compare with biometric systems
     biometric_comparison = compare_with_biometric_systems()
     
-    # Print summary to console
+    # Print summary
+    print_summary_results(comparison_results)
+
+def print_summary_results(comparison_results):
+    """Print a summary of comparison results to the console."""
     print("\n=== Password System Comparison Results ===")
     
     for system, results in comparison_results.items():
@@ -567,25 +365,12 @@ def main():
         print(f"    - Lowercase: {results['character_classes']['lowercase_pct']:.1f}%")
         print(f"    - Digits: {results['character_classes']['digits_pct']:.1f}%")
         print(f"    - Symbols: {results['character_classes']['symbols_pct']:.1f}%")
-        print(f"  Most Common Starting Pattern: {list(results['patterns']['start_patterns'].items())[0][0]} " 
-              f"({list(results['patterns']['start_patterns'].items())[0][1]:.1f}%)")
         
         # Print crack time estimates
         seconds = results["crack_time_seconds"]["fast"]
-        if seconds < 60:
-            time_str = f"{seconds:.2f} seconds"
-        elif seconds < 3600:
-            time_str = f"{seconds/60:.2f} minutes"
-        elif seconds < 86400:
-            time_str = f"{seconds/3600:.2f} hours"
-        elif seconds < 31536000:
-            time_str = f"{seconds/86400:.2f} days"
-        else:
-            time_str = f"{seconds/31536000:.2f} years"
-        
+        time_str = format_time_estimate(seconds)
         print(f"  Estimated Time to Crack (Fast Attack): {time_str}")
-    
-    print("\nVisualizations and detailed results have been saved.")
 
 if __name__ == "__main__":
+    import os  # Import here for the CSV export
     main()
