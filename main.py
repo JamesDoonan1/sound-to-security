@@ -2,6 +2,7 @@ import tkinter as tk
 from frontend.gui import on_generate
 
 def main():
+   
     """Main entry point for the application."""
     # Create main app window
     app = tk.Tk()
@@ -47,7 +48,7 @@ def main():
     # Footer
     footer_label = tk.Label(
         app,
-        text="Developed by James Doonan",
+        text="Developed by James Doonan and Cormac Geraghty",
         font=("Helvetica", 10),
         fg="gray",
         bg="#282c34"

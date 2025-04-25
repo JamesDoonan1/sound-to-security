@@ -30,6 +30,130 @@ PASSWORD_DATA_FILE = os.path.join(LOGS_DIR, "password_data.csv")
 # Global variables
 generated_password = None  
 test_results = {}  # Stores test results for comparison
+current_username = "default_user"  # Default username
+
+class AudioAccountDialog(tk.Toplevel):
+    """Custom dialog for audio file password creation/login."""
+    
+    def __init__(self, parent, for_login=False):
+        super().__init__(parent)
+        self.parent = parent
+        self.for_login = for_login
+        self.result = None
+        self.username = ""
+        
+        # Configure dialog window
+        title = "Audio File Login" if for_login else "Create Audio Password"
+        self.title(title)
+        self.geometry("450x250")
+        self.configure(bg="#282c34")
+        self.resizable(False, False)
+        self.transient(parent)
+        self.grab_set()
+        
+        # Center the dialog on screen
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f"+{x}+{y}")
+        
+        # Build UI
+        self.create_widgets()
+        
+    def create_widgets(self):
+        # Header
+        header_text = "Audio Login" if self.for_login else "Create Audio Password"
+        header = tk.Label(
+            self, 
+            text=header_text,
+            font=("Helvetica", 16, "bold"),
+            fg="#61dafb",
+            bg="#282c34"
+        )
+        header.pack(pady=15)
+        
+        # Username frame
+        username_frame = tk.Frame(self, bg="#282c34")
+        username_frame.pack(pady=10, fill="x", padx=30)
+        
+        username_label = tk.Label(
+            username_frame,
+            text="Username:",
+            font=("Helvetica", 12),
+            fg="white",
+            bg="#282c34",
+            anchor="w"
+        )
+        username_label.pack(fill="x")
+        
+        self.username_entry = tk.Entry(
+            username_frame,
+            font=("Helvetica", 12),
+            bg="#1e2127",
+            fg="white",
+            insertbackground="white"
+        )
+        self.username_entry.pack(fill="x", pady=5)
+        self.username_entry.insert(0, "default_user")
+        self.username_entry.focus_set()
+        
+        # Buttons frame
+        btn_frame = tk.Frame(self, bg="#282c34")
+        btn_frame.pack(pady=20, fill="x", padx=30)
+        
+        action_text = "Select Audio & Login" if self.for_login else "Select Audio & Create Password"
+        
+        select_btn = tk.Button(
+            btn_frame,
+            text=action_text,
+            font=("Helvetica", 12),
+            bg="#61dafb",
+            fg="#282c34",
+            activebackground="#21a1f1",
+            activeforeground="white",
+            command=self.on_submit
+        )
+        select_btn.pack(side="left", padx=10)
+        
+        cancel_btn = tk.Button(
+            btn_frame,
+            text="Cancel",
+            font=("Helvetica", 12),
+            bg="gray",
+            fg="white",
+            activebackground="#666",
+            activeforeground="white",
+            command=self.on_cancel
+        )
+        cancel_btn.pack(side="right", padx=10)
+    
+    def on_submit(self):
+        self.username = self.username_entry.get().strip()
+        if not self.username:
+            messagebox.showerror("Error", "Username is required", parent=self)
+            return
+        
+        # Close the dialog
+        self.grab_release()
+        self.destroy()
+        
+        # Proceed with file selection
+        self.process_audio_file()
+    
+    def on_cancel(self):
+        self.grab_release()
+        self.destroy()
+    
+    def process_audio_file(self):
+        from audio_passwords.main import choose_audio_file
+        choose_audio_file(username=self.username, for_login=self.for_login)
+
+def show_audio_dialog(parent, for_login=False):
+    """Shows the custom dialog for audio password creation/login."""
+    dialog = AudioAccountDialog(parent, for_login=for_login)
+    parent.wait_window(dialog)
 
 ###  PASSWORD HANDLING FUNCTIONS
 def save_password(password):
@@ -489,7 +613,8 @@ header_label.pack(pady=20)
 generate_button = ttk.Button(app, text="Generate Password", style="TButton", command=on_generate)
 generate_button.pack(pady=10)
 
-generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=lambda: choose_audio_file(for_login=False))
+# MODIFIED: Use the custom dialog
+generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=lambda: show_audio_dialog(app, for_login=False))
 generate_file_button.pack(pady=10)
 
 test_button = ttk.Button(app, text="Run Security Tests", style="TButton", state=tk.DISABLED, command=run_security_tests)
@@ -501,11 +626,11 @@ compare_button.pack(pady=5)
 login_button = ttk.Button(app, text="Voice Login", style="TButton", command=on_login)
 login_button.pack(pady=10)
 
-file_login_button = ttk.Button(app, text="Audio File Login", style="TButton", command=lambda: choose_audio_file(for_login=True))
+# MODIFIED: Use the custom dialog
+file_login_button = ttk.Button(app, text="Audio File Login", style="TButton", command=lambda: show_audio_dialog(app, for_login=True))
 file_login_button.pack(pady=10)
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")
 result_label.pack(pady=20)
-
 
 app.mainloop()
