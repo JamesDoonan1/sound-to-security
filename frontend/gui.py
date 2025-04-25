@@ -112,8 +112,9 @@ def on_generate():
             # Ensure button exists before disabling
             compare_button.config(state=tk.DISABLED)
 
-            #  Run security tests automatically
-            run_security_tests()
+            # Enable test button so user can run it manually
+            test_button.config(state=tk.NORMAL)
+
 
         else:
             print(" Error: Failed to generate password.")
@@ -372,16 +373,20 @@ def on_login():
         result_label.config(text=" Error in capturing audio!")
 
 def compare_ai_results():
-    """Opens a new window to display AI vs Traditional Password Comparison."""
-    log_file = "backend/logs/password_result_log.csv"
+    """Opens a new window to display AI vs Traditional Password Comparison (Dark Mode)."""
+    log_file = os.path.join(LOGS_DIR, "password_result_log.csv")
 
     if not os.path.exists(log_file):
         messagebox.showerror("Error", "No test results available. Run security tests first.")
         return
 
     try:
-        # Load CSV file into a DataFrame
-        df = pd.read_csv(log_file)
+        # Add error handling for CSV file format issues
+        try:
+            df = pd.read_csv(log_file)
+        except pd.errors.ParserError as e:
+            messagebox.showerror("Error", "CSV file format has changed or is corrupt.")
+            return
 
         if df.empty:
             messagebox.showerror("Error", "No data found in the log file.")
@@ -390,32 +395,74 @@ def compare_ai_results():
         # Get the latest test result (last row)
         latest_result = df.iloc[-1]
 
-        #  Extract key data
-        ai_password = latest_result["AI_Password"]
-        passphrase = latest_result["Passphrase"]
-        cl_cracked = latest_result["Claude_Cracked"]
-        cl_attempts = latest_result["Claude_Attempts"]
-        gpt_cracked = latest_result["GPT_Cracked"]
-        gpt_attempts = latest_result["GPT_Attempts"]
-        brute_cracked = latest_result["Brute_Cracked"]
-        traditional_passwords = latest_result["Traditional_Passwords"]
+        # Extract required fields
+        ai_password = latest_result.get("AI_Password", "N/A")
+        passphrase = latest_result.get("Passphrase", "N/A")
+        cl_cracked = latest_result.get("Claude_Cracked", "N/A")
+        cl_attempts = latest_result.get("Claude_Attempts", "N/A")
+        gpt_cracked = latest_result.get("GPT_Cracked", "N/A")
+        gpt_attempts = latest_result.get("GPT_Attempts", "N/A")
+        brute_cracked = latest_result.get("Brute_Cracked", "N/A")
+        traditional_passwords = latest_result.get("Traditional_Passwords", "N/A")
 
-        #  Create a new Tkinter window to display results
+        # Create dark mode window
         compare_window = tk.Toplevel(app)
-        compare_window.title("AI Password Security Comparison")
+        compare_window.title("AI Password Security Results")
         compare_window.geometry("600x500")
+        compare_window.configure(bg="#282c34")
 
-        tk.Label(compare_window, text=" AI Password Security Results", font=("Helvetica", 16, "bold")).pack(pady=10)
-        tk.Label(compare_window, text=f" AI Password: {ai_password}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" Passphrase: {passphrase}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" Claude Cracked: {cl_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" Claude's Attempts: {cl_attempts}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" GPT-4 Cracked: {gpt_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" GPT-4's Attempts: {gpt_attempts}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" Brute-Force Cracked: {brute_cracked}", font=("Helvetica", 12)).pack()
-        tk.Label(compare_window, text=f" Traditional Passwords: {traditional_passwords}", font=("Helvetica", 12, "bold")).pack()
+        # Header
+        tk.Label(compare_window, text=" AI Password Security Results",
+                 font=("Helvetica", 16, "bold"), fg="#61dafb", bg="#282c34").pack(pady=10)
 
-        tk.Button(compare_window, text="Close", command=compare_window.destroy).pack(pady=10)
+        # AI password and passphrase
+        for label_text in [
+            f" AI Password: {ai_password}",
+            f" Passphrase: {passphrase}",
+            f" Claude Cracked: {cl_cracked}",
+            f" GPT-4 Cracked: {gpt_cracked}",
+            f" Brute-Force Cracked: {brute_cracked}",
+            f" Traditional Passwords: {traditional_passwords}"
+        ]:
+            tk.Label(compare_window, text=label_text,
+                     font=("Helvetica", 12), fg="white", bg="#282c34").pack(pady=2)
+
+        # Claude Attempts section
+        tk.Label(compare_window, text=" Claude's Attempts:",
+                 font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
+
+        cl_frame = tk.Frame(compare_window, bg="#282c34")
+        cl_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+
+        cl_text = tk.Text(cl_frame, height=5, width=60, wrap=tk.WORD,
+                          font=("Helvetica", 10), bg="#1e2127", fg="white")
+        cl_text.insert(tk.END, cl_attempts)
+        cl_text.config(state=tk.DISABLED)
+        cl_scrollbar = tk.Scrollbar(cl_frame, command=cl_text.yview)
+        cl_text.configure(yscrollcommand=cl_scrollbar.set)
+        cl_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        cl_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # GPT Attempts section
+        tk.Label(compare_window, text=" GPT-4's Attempts:",
+                 font=("Helvetica", 12, "bold"), fg="white", bg="#282c34").pack(pady=5)
+
+        gpt_frame = tk.Frame(compare_window, bg="#282c34")
+        gpt_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+
+        gpt_text = tk.Text(gpt_frame, height=5, width=60, wrap=tk.WORD,
+                           font=("Helvetica", 10), bg="#1e2127", fg="white")
+        gpt_text.insert(tk.END, gpt_attempts)
+        gpt_text.config(state=tk.DISABLED)
+        gpt_scrollbar = tk.Scrollbar(gpt_frame, command=gpt_text.yview)
+        gpt_text.configure(yscrollcommand=gpt_scrollbar.set)
+        gpt_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        gpt_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Close button
+        tk.Button(compare_window, text="Close",
+                  font=("Helvetica", 12), bg="#61dafb", fg="#282c34",
+                  command=compare_window.destroy).pack(pady=10)
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load test results: {e}")
@@ -445,6 +492,9 @@ generate_button.pack(pady=10)
 generate_file_button = ttk.Button(app, text="Generate Audio File Password", style="TButton", command=lambda: choose_audio_file(for_login=False))
 generate_file_button.pack(pady=10)
 
+test_button = ttk.Button(app, text="Run Security Tests", style="TButton", state=tk.DISABLED, command=run_security_tests)
+test_button.pack(pady=5)
+
 compare_button = ttk.Button(app, text="Compare AI Results", style="TButton", state=tk.DISABLED, command=compare_ai_results)
 compare_button.pack(pady=5)
 
@@ -456,5 +506,6 @@ file_login_button.pack(pady=10)
 
 result_label = tk.Label(app, text="Click 'Generate Password' to begin.", font=("Helvetica", 12), fg="white", bg="#282c34")
 result_label.pack(pady=20)
+
 
 app.mainloop()
