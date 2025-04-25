@@ -10,7 +10,6 @@ This project explores novel approaches to password authentication by leveraging 
 
 Both approaches are rigorously tested against brute-force attacks, dictionary attacks, and AI-based cracking attempts, demonstrating significant security advantages over conventional password creation methods.
 
-## Demo Video of Integrated Projects
 
 ## Demo Video of Voice-Based passwords (James Doonan)
 https://youtu.be/EU1PWU_Si1w   
