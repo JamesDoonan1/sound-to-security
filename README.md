@@ -16,7 +16,7 @@ This project explores a novel approach to password authentication by leveraging 
 https://youtu.be/EU1PWU_Si1w
 
 ### Dissertation
-The full dissertation PDF is available in the root of this repository: Dissertation_JamesDoonan_2025.pdf
+The full dissertation PDF is available in the root of this repository: G00310428_FYP_Dissertation.pdf
 
 ---
 
@@ -146,6 +146,7 @@ For full code listings, testing scripts, and detailed output logs, see:
 
 - Appendix A — Code Listings  
 - Appendix B — Test Documentation (unit tests, cracking logs, coverage)
+- Appendix C - GitHub and Video Demonstration URL
 
 ---
 
