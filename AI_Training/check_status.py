@@ -31,6 +31,12 @@ def get_model_id():
         return f.read().strip()
 
 def check_fine_tune_status(model_id_path="model_info_fold0.txt"):
+    """
+    Retrieve and display the status of a fine-tuning job.
+
+    Args:
+        model_id_path (str): Path to the file containing the fine-tuning job ID.
+    """
     if not openai.api_key:
         print("Error: OPENAI_API_KEY is not set. Check your .env file or export the key.")
         exit(1)
@@ -43,6 +49,7 @@ def check_fine_tune_status(model_id_path="model_info_fold0.txt"):
         model_id = f.read().strip()
 
     try:
+        # Retrieve fine-tuning job details from OpenAI
         job = openai.fine_tuning.jobs.retrieve(model_id)
         print("\n--- Fine-Tuning Job Status ---")
         print(f"Job ID:           {job.id}")
@@ -60,6 +67,7 @@ def check_fine_tune_status(model_id_path="model_info_fold0.txt"):
         exit(1)
 
 if __name__ == "__main__":
+    # Validate API key, load model ID, and check fine-tune job status
     validate_api_key()
     model_id = get_model_id()
     check_fine_tune_status(model_id)

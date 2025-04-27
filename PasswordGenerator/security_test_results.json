@@ -6231,5 +6231,36 @@
             7
         ],
         "entropy": 3.584962500721156
+    },
+    {
+        "audio_hash": "fa79fdc70e4a9804f4d5a5c27a5699fa",
+        "base_password": "Br1gh^t#Q@9*",
+        "candidate_count": 10,
+        "candidates": [
+            "Br1g^t#H@rm*",
+            "^Br1gHt#*7@C",
+            "Br^gHt#7*Qp",
+            "Br1gHt#&@c7*",
+            "Br1gHt#^7@Rm",
+            "Br1g#t^H@Rm*",
+            "Br^gHt&9#Rm*",
+            "^Bri9#Har*Qk",
+            "Br^gHt#9*Qa",
+            "Br1gHt#^H@rm"
+        ],
+        "match_count": 0,
+        "edit_distances": [
+            4,
+            7,
+            7,
+            5,
+            6,
+            6,
+            8,
+            11,
+            7,
+            6
+        ],
+        "entropy": 3.584962500721156
     }
 ]

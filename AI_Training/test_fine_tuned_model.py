@@ -1,10 +1,25 @@
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Load environment variables from .env
 load_dotenv()
+# Initialize OpenAI client
 client = OpenAI()
 
 def generate_candidate_password(features, model_id):
+    """
+    Generate a candidate password based on summarized audio features.
+
+    Constructs a structured prompt from feature summaries and uses
+    a fine-tuned model to generate a strong password.
+
+    Args:
+        features (dict): Dictionary containing summarized audio features.
+        model_id (str): ID of the fine-tuned OpenAI model.
+
+    Returns:
+        str: A generated candidate password string.
+    """
     prompt = """
 Based on these summarized audio characteristics:
 - MFCC mean: {}
@@ -29,6 +44,7 @@ Generate a secure access code. The access code should be a strong password, not 
     features.get("Chroma_Features_CENS_mean", "N/A")
     )
     
+    # Call OpenAI API to generate the password
     response = client.chat.completions.create(
         model=model_id,
         messages=[{"role": "user", "content": prompt}],
@@ -38,6 +54,7 @@ Generate a secure access code. The access code should be a strong password, not 
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
+    #Example usage for testing purposes
     test_features = {
         "MFCCs_mean": "9.409542083740234",
         "Spectral_Centroid_mean": "3516.9284224113326",
