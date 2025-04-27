@@ -6,16 +6,19 @@ This project explores novel approaches to password authentication by leveraging 
 
 1. **Voice-Based System:** Uses vocal inputs such as speech or humming to extract acoustic features, which are then processed by Claude AI to generate high-entropy passwords.
 
-2. **Audio-Based System:** Processes ambient audio or music files to create structured, deterministic passwords with balanced character distribution.
+2. **Audio File-Based System:** Processes ambient audio or music files to create structured, deterministic passwords with balanced character distribution.
 
 Both approaches are rigorously tested against brute-force attacks, dictionary attacks, and AI-based cracking attempts, demonstrating significant security advantages over conventional password creation methods.
 
 
-## Demo Video of Voice-Based passwords (James Doonan)
+## Demo Video of Voice-Based Passwords (James Doonan)
 https://youtu.be/EU1PWU_Si1w   
 
 ## Demo Video of Audio-Based Passwords (Cormac Geraghty)
+https://www.youtube.com/watch?v=jI0g66XIJP0&ab_channel=CormacGeraghty
 
+## Demo Video of Final Integration of Both Systems
+https://www.youtube.com/watch?v=N_-nwLAFkfE&ab_channel=JamesDoonan
 
 ## Project Structure
 ```
@@ -43,7 +46,7 @@ sound-to-security/
 ### Audio-Based System
 - Structured character distribution: 35.4% uppercase, 35.4% lowercase, 15.4% digits, 13.8% symbols
 - Deterministic pattern-based implementation
-- Entropy measurement ~3.0 bits (vs. dictionary)
+- Entropy measurement ~3.8 bits (vs. dictionary)
 - Exceptional brute force resistance (380 days to 13.85T years)
 - NIST complexity score: 5.5 (highest baseline)
 
